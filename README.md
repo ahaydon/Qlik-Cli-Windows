@@ -10,7 +10,7 @@ Once the module is loaded you can view a list of available commands by using the
 Get-Help Qlik
 ```
 ## Examples
-A number of files are provided to demonstrate the use of the module with Vagrant to automate the deployment of a multi-node Qlik Sense environment, this requires that Vagrant and VirtualBox are installed and can be used by running Vagrant commands in the folder where this repository has been cloned.
+A number of files are provided to demonstrate the use of the module with Vagrant to automate the deployment of a multi-node Qlik Sense environment, this requires that Vagrant, VirtualBox and the [vagrant-provision-reboot-plugin](https://github.com/exratione/vagrant-provision-reboot) are installed and can be used by running Vagrant commands in the folder where this repository has been cloned.
 ```sh
 vagrant up
 ```
