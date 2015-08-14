@@ -1,0 +1,66 @@
+{
+  "servers": [
+    {
+      "name": "sense1",
+      "box": "opentable/win-2012r2-standard-amd64-nocm",
+      "ip": "10.0.1.2",
+      "ports": [
+        {
+          "guest": 3389,
+          "host": 33389
+        },
+        {
+          "guest": 443,
+          "host": 4433
+        },
+        {
+          "guest": 4244,
+          "host": 4244
+        }
+      ],
+      "sense": {
+        "central": true,
+        "proxy": true
+      }
+    },
+    {
+      "name": "sense2",
+      "box": "opentable/win-2012r2-standard-amd64-nocm",
+      "ip": "10.0.1.3",
+      "ports": [
+        {
+          "guest": 3389,
+          "host": 33390
+        }
+      ],
+      "sense": {
+        "engine": true,
+        "syncnode": true
+      }
+    },
+    {
+      "name": "sense3",
+      "box": "opentable/win-2012r2-standard-amd64-nocm",
+      "ip": "10.0.1.4",
+      "ports": [
+        {
+          "guest": 3389,
+          "host": 33391
+        }
+      ],
+      "sense": {
+        "scheduler": true,
+        "syncnode": true
+      }
+    }
+  ],
+  "sense": {
+    "install": [
+      "-s",
+      "-userwithdomain", ".\\vagrant",
+      "-password", "vagrant",
+      "-installdir", "c:\\qlik\\sense",
+      "-dbpassword", "sense"
+    ]
+  }
+}

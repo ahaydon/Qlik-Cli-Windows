@@ -3,3 +3,4 @@ packer_cache/
 
 # For built boxes
 *.box
+license.json
