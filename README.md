@@ -28,7 +28,7 @@ Connect-Qlik http://servername
 ### Commands
 Get commands can use filters to limits the results returned, e.g. to view a list of nodes that have the proxy service enabled:
 ```sh
-Get-QlikNode -filter "schedulerenabled eq true"
+Get-QlikNode -filter "proxyenabled eq true"
 ```
 Some commands also support pipelining, such as `Update-` commands and `Start-QlikTask`. You can reload all tasks by running the following command, or use a filter to limits the tasks to be run.
 ```sh
