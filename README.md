@@ -15,3 +15,23 @@ A number of files are provided to demonstrate the use of the module with Vagrant
 vagrant up
 ```
 The installation requires a valid Qlik Sense Site License, and the license details need to be entered into the license.json file, without this none of the APIs will be available and so the Qlik-Cli commands will not work. The license details in the license.json file will be read by the deployment scripts and applied automatically.
+### Connecting
+By default commands will attempt to connect to the QRS service via the proxy on localhost, but this can be changed using the `Connect-Qlik` command, e.g.
+```sh
+Connect-Qlik servername -TrustAllCerts
+```
+Replace `servername` with the name of the server to connect to.
+The `-TrustAllCerts` switch should only be used if the local machine does not trust the certificate used by the server, or if the name does not match. It is also possible to use HTTP without SSL.
+```sh
+Connect-Qlik http://servername
+```
+### Commands
+Get commands can use filters to limits the results returned, e.g. to view a list of nodes that have the proxy service enabled:
+```sh
+Get-QlikNode -filter "schedulerenabled eq true"
+```
+Some commands also support pipelining, such as `Update-` commands and `Start-Task`. You can reload all tasks by running the following command, or use a filter to limits the tasks to be run.
+```sh
+Get-QlikTasks | Start-QlikTasks -Wait
+```
+The `-Wait` switch will cause the command to wait for the task to complete before proceeding to the next, this can be omitted to run them all asynchronously.
