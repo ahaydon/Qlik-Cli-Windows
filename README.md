@@ -30,8 +30,8 @@ Get commands can use filters to limits the results returned, e.g. to view a list
 ```sh
 Get-QlikNode -filter "schedulerenabled eq true"
 ```
-Some commands also support pipelining, such as `Update-` commands and `Start-Task`. You can reload all tasks by running the following command, or use a filter to limits the tasks to be run.
+Some commands also support pipelining, such as `Update-` commands and `Start-QlikTask`. You can reload all tasks by running the following command, or use a filter to limits the tasks to be run.
 ```sh
-Get-QlikTasks | Start-QlikTasks -Wait
+Get-QlikTask | Start-QlikTask -Wait
 ```
 The `-Wait` switch will cause the command to wait for the task to complete before proceeding to the next, this can be omitted to run them all asynchronously.
