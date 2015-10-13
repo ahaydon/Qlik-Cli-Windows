@@ -1,0 +1,166 @@
+{
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "vm_name": "vagrant-w2012r2",
+      "iso_url": "http://download.microsoft.com/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.16384.WINBLUE_RTM.130821-1623_X64FRE_SERVER_EVAL_EN-US-IRM_SSS_X64FREE_EN-US_DV5.ISO",
+      "iso_checksum_type": "md5",
+      "iso_checksum": "458ff91f8abc21b75cb544744bf92e6a",
+      "communicator": "winrm",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "headless": true,
+      "boot_wait": "1m",
+      "guest_additions_mode": "attach",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "guest_os_type": "Windows2012_64",
+      "disk_size": 61440,
+      "floppy_files": [
+        "./answer_files/2012_r2/Autounattend.xml",
+        "./scripts/microsoft-updates.bat",
+        "./scripts/win-updates.ps1",
+        "./scripts/oracle-cert.cer",
+        "./scripts/disable-password-complexity.ps1"
+      ],
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "2048"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "2"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--natpf1",
+          "guestwinrm,tcp,127.0.0.1,5985,,5985"
+        ]
+      ],
+      "vboxmanage_post": [
+        [
+          "storageattach",
+          "{{.Name}}",
+          "--storagectl",
+          "IDE Controller",
+          "--port",
+          "1",
+          "--device",
+          "0",
+          "--type",
+          "dvddrive",
+          "--medium",
+          "emptydrive"
+        ]
+      ]
+    },
+    {
+      "type": "virtualbox-ovf",
+      "source_path": "./output-virtualbox-iso/vagrant-w2012r2.ovf",
+      "headless": true,
+      "guest_additions_mode": "disable",
+      "boot_wait": "30s",
+      "communicator": "winrm",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "shutdown_timeout": "10m",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "2048"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--vram",
+          "64"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "2"
+        ],
+        [
+          "sharedfolder",
+          "add",
+          "{{.Name}}",
+          "--name",
+          "setup_files",
+          "--hostpath",
+          "{{pwd}}/setup_files",
+          "--automount"
+        ]
+      ],
+      "vboxmanage_post": [
+        [
+          "sharedfolder",
+          "remove",
+          "{{.Name}}",
+          "--name",
+          "setup_files"
+        ]
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "powershell",
+      "scripts": [
+        "./scripts/virtualbox-guest-tools.ps1",
+        "./scripts/disable-password-complexity.ps1"
+      ],
+      "only":["virtualbox-iso"]
+    },
+    {
+      "type": "windows-shell",
+      "scripts": [
+        "./scripts/enable-rdp.bat",
+        "./scripts/compile-dotnet-assemblies.bat"
+      ],
+      "only":["virtualbox-iso"]
+    },
+    {
+      "type": "powershell",
+      "elevated_user": "vagrant",
+      "elevated_password": "vagrant",
+      "scripts": [
+        "./scripts/dis-updates.ps1",
+        "./scripts/dotnet.ps1",
+        "./scripts/wmf.ps1"
+      ],
+      "only":["virtualbox-ovf"]
+    },
+    {
+      "type": "windows-shell",
+      "scripts": [
+        "./scripts/disable-auto-logon.bat"
+      ],
+      "only":["virtualbox-ovf"]
+    },
+    {
+      "type": "powershell",
+      "scripts": [
+        "./scripts/cleanup.ps1"
+      ],
+      "only":["virtualbox-ovf"]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "keep_input_artifact": true,
+      "output": "windows2012r2-{{.Provider}}.box",
+      "vagrantfile_template": "vagrantfile-windows_2012_r2.template",
+	    "only":["virtualbox-ovf"]
+    }
+  ]
+}
