@@ -11,3 +11,6 @@ Get-Help Qlik
 ```
 ## Examples
 A number of files are provided to demonstrate the use of the module with Vagrant to automate the deployment of a multi-node Qlik Sense site, this requires that Vagrant and VirtualBox are installed and can be used by running commands in their relevant folders. See readme files in each of the sub-folders for more information.
+
+## License
+This software is made available "AS IS" without warranty of any kind. Qlik support agreement does not cover support for this software.

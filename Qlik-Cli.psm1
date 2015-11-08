@@ -217,15 +217,19 @@ function Connect-Qlik {
 function Export-QlikApp {
   [CmdletBinding()]
   param (
-    [parameter(Mandatory=$true,Position=0)]
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
-    [parameter(Mandatory=$true,Position=1)]
+    [parameter(Position=1)]
     [string]$filename
   )
   
   PROCESS {
+    If( [string]::IsNullOrEmpty($filename) ) {
+      $file = "$id.qvf"
+    }
     $app = (Get-RestUri /qrs/app/$id/export).value
-    DownloadFile /qrs/download/app/$id/$app/temp.qvf $filename
+    DownloadFile "/qrs/download/app/$id/$app/temp.qvf" $file
+    Write-Verbose "Downloaded $id to $file"
   }
 }
 
