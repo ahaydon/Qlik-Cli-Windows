@@ -65,6 +65,27 @@ function Put-RestUri($path, $body) {
   return $result
 }
 
+function DownloadFile($path, $filename) {
+  $xrfKey = "abcdefghijklmnop"
+  If( $script:webSession -eq $null ) {
+    Connect-Qlik > $null
+  }
+  If( $path.contains("?") ) {
+    $path += "&xrfkey=$xrfKey"
+  } else {
+    $path += "?xrfkey=$xrfKey"
+  }
+  
+  $params = $Script:api_params
+  If( !$params.Header.ContainsKey("x-Qlik-Xrfkey") ) {
+    $params.Header.Add("x-Qlik-Xrfkey", $xrfKey)
+  }
+
+  If( $body ) { Write-Verbose $body }
+  $result = Invoke-WebRequest -Method Get -Uri ($Script:prefix + $path) @params -WebSession $script:webSession -OutFile $filename
+  return $result
+}
+
 function FetchCertificate($storeName, $storeLocation) {
     $certExtension = "1.3.6.1.5.5.7.13.3"
     $store = New-Object System.Security.Cryptography.X509Certificates.X509Store $storeName, $storeLocation
@@ -190,6 +211,21 @@ function Connect-Qlik {
     }
     $result = Get-QlikAbout
     return $result
+  }
+}
+
+function Export-QlikApp {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$id,
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$filename
+  )
+  
+  PROCESS {
+    $app = (Get-RestUri /qrs/app/$id/export).value
+    DownloadFile /qrs/download/app/$id/$app/temp.qvf $filename
   }
 }
 
@@ -1078,4 +1114,4 @@ function Update-QlikVirtualProxy {
   }
 }
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Get-Qlik*, New-Qlik*, Register-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Export-Qlik*, Get-Qlik*, New-Qlik*, Register-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
