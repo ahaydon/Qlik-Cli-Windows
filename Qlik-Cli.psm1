@@ -219,14 +219,18 @@ function Export-QlikApp {
   param (
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
-    [parameter(Position=1)]
+    [parameter(ValueFromPipelinebyPropertyName=$True,Position=1)]
     [string]$filename
   )
   
   PROCESS {
+    Write-Verbose filename=$filename
     If( [string]::IsNullOrEmpty($filename) ) {
       $file = "$id.qvf"
+    } else {
+      $file = $filename
     }
+    Write-Verbose file=$file
     $app = (Get-RestUri /qrs/app/$id/export).value
     DownloadFile "/qrs/download/app/$id/$app/temp.qvf" $file
     Write-Verbose "Downloaded $id to $file"
