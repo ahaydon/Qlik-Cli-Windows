@@ -60,7 +60,7 @@ function Put-RestUri($path, $body) {
   } else {
     $path += "?xrfkey=$xrfKey"
   }
-  Write-Verbose $body
+  If( $body ) { Write-Verbose $body }
   $result = Invoke-RestMethod -Method Put -Uri ($Script:prefix + $path) -Body $body -Headers @{"x-Qlik-Xrfkey"=$xrfKey; "Accept"="application/json"} -ContentType "application/json" -WebSession $script:webSession
   return $result
 }
@@ -211,6 +211,25 @@ function Connect-Qlik {
     }
     $result = Get-QlikAbout
     return $result
+  }
+}
+
+function Copy-QlikApp {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [string]$id,
+    [parameter(ValueFromPipelinebyPropertyName=$True,Position=1)]
+    [string]$name
+  )
+
+  PROCESS {
+    $path = "/qrs/app/$id/copy"
+    If( $name ) {
+      $path += "?name=$name"
+    }
+    
+    return Post-RestUri $path
   }
 }
 
@@ -743,6 +762,69 @@ function New-QlikRule {
   }
 }
 
+function New-QlikStream {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$name,
+    
+    [string[]]$customProperties,
+    [string[]]$tags
+  )
+
+  PROCESS {
+    $stream = @{
+      name=$name;
+    }
+
+    If( $customProperties ) {
+      $prop = @(
+        $customProperties | foreach {
+          $val = $_ -Split "="
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          @{
+            value = ($p.choiceValues -eq $val[1])[0]
+            definition = $p
+          }
+        }
+      )
+      $stream.customProperties = $prop
+    }
+
+    If( $tags ) {
+      $prop = @(
+        $tags | foreach {
+          $p = Get-QlikTag -filter "name eq '$_'"
+          @{
+            id = $p.id
+          }
+        }
+      )
+      $stream.tags = $prop
+    }
+
+    $json = $stream | ConvertTo-Json -Compress -Depth 5
+    
+    return Post-RestUri '/qrs/stream' $json
+  }
+}
+
+function New-QlikTag {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$name
+  )
+
+  PROCESS {
+    $json = (@{
+      name=$name;
+    } | ConvertTo-Json -Compress -Depth 5)
+    
+    return Post-RestUri '/qrs/tag' $json
+  }
+}
+
 function New-QlikVirtualProxy {
   [CmdletBinding()]
   param (
@@ -807,6 +889,36 @@ function New-QlikUserAccessGroup {
     } | ConvertTo-Json -Compress -Depth 5)
     
     return Post-RestUri "/qrs/License/UserAccessGroup" $json
+  }
+}
+
+function Publish-QlikApp {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
+    [string]$id,
+    
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$stream,
+    
+    [string]$name
+  )
+  
+  PROCESS {
+    If( $stream -match $script:guid ) {
+      $streamId = $stream
+    } else {
+      $streamId = $(Get-QlikStream -filter "name eq '$stream'").id
+    }
+
+    $path = "/qrs/app/$id/publish?stream=$streamId"
+
+    If( $name )
+    {
+      $path += "&name=$name"
+    }
+
+    return Put-RestUri $path
   }
 }
 
@@ -892,6 +1004,53 @@ function Start-QlikTask {
     } else {
       return Post-RestUri "/qrs/task/start$($sync)?name=$id"
     }
+  }
+}
+
+function Update-QlikApp {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [string]$id,
+    
+    [string]$name,
+    [string]$description,
+    [string[]]$customProperties,
+    [string[]]$tags
+  )
+  
+  PROCESS {
+    $app = Get-QlikApp $id
+    If( $name ) { $app.name = $name }
+    If( $description ) { $app.description = $description }
+    If( $customProperties ) {
+      $prop = @(
+        $customProperties | foreach {
+          $val = $_ -Split "="
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          @{
+            value = ($p.choiceValues -eq $val[1])[0]
+            definition = $p
+          }
+        }
+      )
+      $app.customProperties = $prop
+    }
+
+    If( $tags ) {
+      $prop = @(
+        $tags | foreach {
+          $p = Get-QlikTag -filter "name eq '$_'"
+          @{
+            id = $p.id
+          }
+        }
+      )
+      $app.tags = $prop
+    }
+    
+    $json = $app | ConvertTo-Json -Compress -Depth 5
+    return Put-RestUri "/qrs/app/$id" $json
   }
 }
 
@@ -1122,4 +1281,4 @@ function Update-QlikVirtualProxy {
   }
 }
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Export-Qlik*, Get-Qlik*, New-Qlik*, Register-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
