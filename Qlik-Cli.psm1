@@ -87,24 +87,55 @@ function DownloadFile($path, $filename) {
 }
 
 function FetchCertificate($storeName, $storeLocation) {
-    $certExtension = "1.3.6.1.5.5.7.13.3"
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store $storeName, $storeLocation
-    $certs = @()
-    try {
-        $store.Open("ReadOnly")
-        $certs = $store.Certificates.Find("FindByExtension", $certExtension, $false)
-    }
-    catch {
-        Write-Host "Caught an exception:" -ForegroundColor Red
-        Write-Host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-        Write-Host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    finally{
-        $store.Close()
-    }
-    return $certs
+  $certExtension = "1.3.6.1.5.5.7.13.3"
+  $store = New-Object System.Security.Cryptography.X509Certificates.X509Store $storeName, $storeLocation
+  $certs = @()
+  try {
+    $store.Open("ReadOnly")
+    $certs = $store.Certificates.Find("FindByExtension", $certExtension, $false)
+  }
+  catch {
+    Write-Host "Caught an exception:" -ForegroundColor Red
+    Write-Host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+    Write-Host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+  }
+  finally{
+    $store.Close()
+  }
+  return $certs
 }
 
+function ResolveEnums($objects, $schemaPath) {
+  Write-Verbose "Resolving enums"
+  If( !$Script:enums ) {
+    $enums = Get-RestUri "/qrs/about/api/enums"
+    $Script:enums = $enums | Get-Member -MemberType NoteProperty | foreach { $enums.$($_.Name) }
+  }
+  If( !$Script:relations ) {
+    $Script:relations = Get-QlikRelations
+  }
+  #$enumsRelated = $Script:enums | where { $_ -match $schemaPath }
+  #$relationsRelated = $Script:relations | where { $_.Usages -contains $schemaPath }
+  foreach( $object in $objects ) {
+    If( !$schemaPath ) { $schemaPath = $object.schemaPath }
+    Write-Verbose "Schema path: $schemaPath"
+    foreach( $prop in ( $object | Get-Member -MemberType NoteProperty ) ) {
+      Write-Verbose "Property: $schemaPath.$($prop.Name)"
+      $enumsRelated = $Script:enums | where-object { $_.Usages -contains "$schemaPath.$($prop.Name)" }
+      If( $enumsRelated ) {
+        $value = ((($enumsRelated | select -expandproperty values | where {$_ -like "$($object.$($prop.Name)):*" }) -split ":")[1]).TrimStart()
+        Write-Verbose "Resolving $($prop.Name) from $($object.$($prop.Name)) to $value"
+        $object.$($prop.Name) = $value
+      }
+      $relatedRelations = $Script:relations -like "$schemaPath.$($prop.Name) > *"
+      If( $relatedRelations ) {
+        Write-Verbose "Traversing $($prop.Name)"
+        $object.$($prop.Name) = ResolveEnums $object.$($prop.Name) $(($relatedRelations -Split ">")[1].TrimStart())
+      }
+    }
+  }
+  return $objects
+}
 
 function Add-QlikProxy {
   [CmdletBinding()]
@@ -461,104 +492,28 @@ function Get-QlikTask {
   PROCESS {
     $path = "/qrs/task"
     If( !$raw ) {
-      $path += "/table"
-      
-      $json = (@{
-        "entity"="Task"
-        "columns"=@(
-          @{
-            "name"="id"
-            "columnType"="Property"
-            "definition"="id"
+      If( $id ) { $path += "/$id" }
+      $path += "/full"
+      $result = Get-RestUri $path $filter
+      $result = ResolveEnums $result
+      If( !$full ) {
+        $result = $result | foreach {
+          $props = @{
+            name = $_.name
+            status = $_ | select -ExpandProperty operational | select -ExpandProperty lastExecutionResult | select -ExpandProperty status
+            lastExecution = $_ | select -ExpandProperty operational | select -ExpandProperty lastExecutionResult | select -ExpandProperty startTime
+            nextExecution = $_ | select -ExpandProperty operational | select -ExpandProperty nextExecution
           }
-          @{
-            "name"="privileges"
-            "columnType"="Privileges"
-            "definition"="privileges"
-          }
-          @{
-            "name"="compositeEvents"
-            "columnType"="Function"
-            "definition"="Count(CompositeEvent)"
-          }
-          @{
-            "name"="compositeEventRules"
-            "columnType"="Function"
-            "definition"="Count(CompositeEvent.Rule)"
-          }
-          @{
-            "name"="userDirectory"
-            "columnType"="Property"
-            "definition"="userDirectory.name"
-          }
-          @{
-            "name"="resource"
-            "columnType"="Property"
-            "definition"="app.name"
-          }
-          @{
-            "name"="name"
-            "columnType"="Property"
-            "definition"="name"
-          }
-          @{
-            "name"="type"
-            "columnType"="Property"
-            "definition"="taskType"
-          }
-          @{
-            "name"="enabled"
-            "columnType"="Property"
-            "definition"="enabled"
-          }
-          @{
-            "name"="status"
-            "columnType"="Property"
-            "definition"="operational.lastExecutionResult.status"
-          }
-          @{
-            "name"="lastExecution"
-            "columnType"="Property"
-            "definition"="operational.lastExecutionResult.startTime"
-          }
-          @{
-            "name"="nextExecution"
-            "columnType"="Property"
-            "definition"="operational.nextExecution"
-          }
-          @{
-            "name"="tags"
-            "columnType"="List"
-            "definition"="tag"
-            "list"=@(
-              @{
-                "name"="name"
-                "columnType"="Property"
-                "definition"="name"
-              }
-              @{
-                "name"="id"
-                "columnType"="Property"
-                "definition"="id"
-              }
-            )
-          }
-        )
-      } | ConvertTo-Json -Compress -Depth 5)
-      $table = Post-RestUri $path $json
-      $result = @()
-      foreach( $row in $table.rows ) {
-        $object = @{}
-        for ($i = 0; $i -lt $row.Count; $i++){
-          $object.Add( $table.columnNames[$i], $row[$i] )
+          New-Object -TypeName PSObject -Prop $props
         }
-        $result += New-Object -TypeName PSObject -Prop $object
       }
-      return $result | select name,status,lastexecution,nextexecution
+      return $result
     } else {
       If( $id ) { $path += "/$id" }
       If( $full ) { $path += "/full" }
-      return Get-RestUri $path $filter
+      $result = Get-RestUri $path $filter
+      $result = ResolveEnums $result
+      return $result
     }
   }
 }
