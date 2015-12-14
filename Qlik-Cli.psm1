@@ -1,89 +1,84 @@
 $script:guid = "^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$"
+$script:isDate = "^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$"
 
-function Get-RestUri($path, $filter) {
+function CallRestUri($method, $path, $params) {
   If( $Script:prefix -eq $null ) { Connect-Qlik > $null }
   If( ! $path.StartsWith( "http" ) ) {
     $path = $Script:prefix + $path
   }
-  
+
   $xrfKey = "abcdefghijklmnop"
   If( $path.contains("?") ) {
     $path += "&xrfkey=$xrfKey"
   } else {
     $path += "?xrfkey=$xrfKey"
   }
-  
-  $params = $Script:api_params
   If( !$params.Header ) { $params.Header = @{} }
   If( !$params.Header.ContainsKey("x-Qlik-Xrfkey") ) {
     $params.Header.Add("x-Qlik-Xrfkey", $xrfKey)
   }
-  
-  If( $filter ) { $path += "&filter=$filter" }
+
+  Write-Verbose "Calling $method for $path"
   If( $script:webSession -eq $null ) {
-    $result = Invoke-RestMethod -Method Get -Uri $path @params -SessionVariable webSession
+    $result = Invoke-RestMethod -Method $method -Uri $path @params -SessionVariable webSession
     $script:webSession = $webSession
   } else {
-    $result = Invoke-RestMethod -Method Get -Uri $path @params -WebSession $script:webSession
+    $result = Invoke-RestMethod -Method $method -Uri $path @params -WebSession $script:webSession
   }
+  
   return $result
+}
+
+function Get-RestUri($path, $filter) {
+  If( $filter ) {
+    If( $path.contains("?") ) {
+      $path += "&filter=$filter"
+    } else {
+      $path += "?filter=$filter"
+    }
+  }
+  
+  return CallRestUri Get $path $Script:api_params
 }
 
 function Post-RestUri($path, $body) {
-  $xrfKey = "abcdefghijklmnop"
-  If( $script:webSession -eq $null ) {
-    Connect-Qlik > $null
-  }
-  If( $path.contains("?") ) {
-    $path += "&xrfkey=$xrfKey"
-  } else {
-    $path += "?xrfkey=$xrfKey"
-  }
+  $params = $Script:api_params.Clone()
+  $params.ContentType = "application/json"
   
-  $params = $Script:api_params
-  If( !$params.Header.ContainsKey("x-Qlik-Xrfkey") ) {
-    $params.Header.Add("x-Qlik-Xrfkey", $xrfKey)
+  If( $body ) {
+    Write-Verbose $body
+    $params.Body = $body
   }
 
-  If( $body ) { Write-Verbose $body }
-  $result = Invoke-RestMethod -Method Post -Uri ($Script:prefix + $path) -Body $body @params -ContentType "application/json" -WebSession $script:webSession
-  return $result
+  return CallRestUri Post $path $params
 }
 
 function Put-RestUri($path, $body) {
-  $xrfKey = "abcdefghijklmnop"
-  If( $script:webSession -eq $null ) {
-    Connect-Qlik > $null
+  $params = $Script:api_params.Clone()
+  $params.ContentType = "application/json"
+  $params.Header.Accept = "application/json"
+  
+  If( $body ) {
+    Write-Verbose $body
+    $params.Body = $body
   }
-  If( $path.contains("?") ) {
-    $path += "&xrfkey=$xrfKey"
-  } else {
-    $path += "?xrfkey=$xrfKey"
-  }
-  If( $body ) { Write-Verbose $body }
-  $result = Invoke-RestMethod -Method Put -Uri ($Script:prefix + $path) -Body $body -Headers @{"x-Qlik-Xrfkey"=$xrfKey; "Accept"="application/json"} -ContentType "application/json" -WebSession $script:webSession
-  return $result
+  
+  return CallRestUri Put $path $params
 }
 
 function DownloadFile($path, $filename) {
-  $xrfKey = "abcdefghijklmnop"
-  If( $script:webSession -eq $null ) {
-    Connect-Qlik > $null
-  }
-  If( $path.contains("?") ) {
-    $path += "&xrfkey=$xrfKey"
-  } else {
-    $path += "?xrfkey=$xrfKey"
-  }
+  $params = $Script:api_params.Clone()
+  $params.OutFile = $filename
   
-  $params = $Script:api_params
-  If( !$params.Header.ContainsKey("x-Qlik-Xrfkey") ) {
-    $params.Header.Add("x-Qlik-Xrfkey", $xrfKey)
-  }
+  return CallRestUri Get $path $Script:api_params
+}
 
-  If( $body ) { Write-Verbose $body }
-  $result = Invoke-WebRequest -Method Get -Uri ($Script:prefix + $path) @params -WebSession $script:webSession -OutFile $filename
-  return $result
+function UploadFile($path, $filename) {
+  $params = $Script:api_params.Clone()
+  $params.InFile = $filename
+  $params.ContentType = "application/vnd.qlik.sense.app"
+  
+  return CallRestUri Post $path $Script:api_params
 }
 
 function FetchCertificate($storeName, $storeLocation) {
@@ -105,8 +100,8 @@ function FetchCertificate($storeName, $storeLocation) {
   return $certs
 }
 
-function ResolveEnums($objects, $schemaPath) {
-  Write-Verbose "Resolving enums"
+function FormatOutput($objects, $schemaPath) {
+  Write-Debug "Resolving enums"
   If( !$Script:enums ) {
     $enums = Get-RestUri "/qrs/about/api/enums"
     $Script:enums = $enums | Get-Member -MemberType NoteProperty | foreach { $enums.$($_.Name) }
@@ -114,23 +109,24 @@ function ResolveEnums($objects, $schemaPath) {
   If( !$Script:relations ) {
     $Script:relations = Get-QlikRelations
   }
-  #$enumsRelated = $Script:enums | where { $_ -match $schemaPath }
-  #$relationsRelated = $Script:relations | where { $_.Usages -contains $schemaPath }
   foreach( $object in $objects ) {
     If( !$schemaPath ) { $schemaPath = $object.schemaPath }
-    Write-Verbose "Schema path: $schemaPath"
+    Write-Debug "Schema path: $schemaPath"
     foreach( $prop in ( $object | Get-Member -MemberType NoteProperty ) ) {
-      Write-Verbose "Property: $schemaPath.$($prop.Name)"
+      If( $object.$($prop.Name) -is [string] -And $object.$($prop.Name) -match $isDate ) {
+        $object.$($prop.Name) = Get-Date -Format "yyyy/MM/dd HH:mm" $object.$($prop.Name)
+      }
+      Write-Debug "Property: $schemaPath.$($prop.Name)"
       $enumsRelated = $Script:enums | where-object { $_.Usages -contains "$schemaPath.$($prop.Name)" }
       If( $enumsRelated ) {
         $value = ((($enumsRelated | select -expandproperty values | where {$_ -like "$($object.$($prop.Name)):*" }) -split ":")[1]).TrimStart()
-        Write-Verbose "Resolving $($prop.Name) from $($object.$($prop.Name)) to $value"
+        Write-Debug "Resolving $($prop.Name) from $($object.$($prop.Name)) to $value"
         $object.$($prop.Name) = $value
       }
       $relatedRelations = $Script:relations -like "$schemaPath.$($prop.Name) > *"
       If( $relatedRelations ) {
-        Write-Verbose "Traversing $($prop.Name)"
-        $object.$($prop.Name) = ResolveEnums $object.$($prop.Name) $(($relatedRelations -Split ">")[1].TrimStart())
+        Write-Debug "Traversing $($prop.Name)"
+        $object.$($prop.Name) = FormatOutput $object.$($prop.Name) $(($relatedRelations -Split ">")[1].TrimStart())
       }
     }
   }
@@ -190,7 +186,9 @@ function Connect-Qlik {
       [parameter(Mandatory=$false,Position=0)]
       [string]$computername,
       [switch]$TrustAllCerts,
-      [string]$username = "$($env:userdomain)\$($env:username)"
+      [string]$username = "$($env:userdomain)\$($env:username)",
+      [parameter(ValueFromPipeline=$true)]
+      [System.Security.Cryptography.X509Certificates.X509Certificate2]$certificate
   )
 
   PROCESS {
@@ -208,24 +206,28 @@ function Connect-Qlik {
 "@
       [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
     }
-
-    $certs = FetchCertificate "My" "LocalMachine"
-    Write-Verbose "Found $($certs.Count) certificates in LocalMachine store"
-    If ($certs.Count -eq 0) {
-      $certs = FetchCertificate "My" "CurrentUser"
-      Write-Verbose "Found $($certs.Count) certificates in CurrentUser store"
+    If( !$certificate ) {
+      $certs = @(FetchCertificate "My" "LocalMachine")
+      Write-Verbose "Found $($certs.Count) certificates in LocalMachine store"
+      If( $certs.Count -eq 0 ) {
+        $certs = @(FetchCertificate "My" "CurrentUser")
+        Write-Verbose "Found $($certs.Count) certificates in CurrentUser store"
+      }
+      If( $certs.Count -gt 0 ) {
+        $certificate = $certs[0]
+      }
     }
 
-    If( $certs.Count -eq 0 ) {
+    If( !$certificate ) {
       Write-Verbose "No valid certificate found, using Windows credentials"
       $Script:api_params = @{
         UseDefaultCredentials=$true
       }
     } else {
-      Write-Verbose "Using certificate $($certs[0].FriendlyName)"
+      Write-Verbose "Using certificate $($certificate.FriendlyName)"
       
       $Script:api_params = @{
-        Certificate=$certs[0]
+        Certificate=$certificate
         Header=@{"X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))}
       }
       $port = ":4242"
@@ -415,14 +417,17 @@ function Get-QlikRule {
     [parameter(Position=0)]
     [string]$id,
     [string]$filter,
-    [switch]$full
+    [switch]$full,
+    [switch]$raw
   )
 
   PROCESS {
     $path = "/qrs/systemrule"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    $result = Get-RestUri $path $filter
+    If( !$raw ) { $result = FormatOutput $result }
+    return $result
   }
 }
 
@@ -495,7 +500,7 @@ function Get-QlikTask {
       If( $id ) { $path += "/$id" }
       $path += "/full"
       $result = Get-RestUri $path $filter
-      $result = ResolveEnums $result
+      $result = FormatOutput $result
       If( !$full ) {
         $result = $result | foreach {
           $props = @{
@@ -512,7 +517,6 @@ function Get-QlikTask {
       If( $id ) { $path += "/$id" }
       If( $full ) { $path += "/full" }
       $result = Get-RestUri $path $filter
-      $result = ResolveEnums $result
       return $result
     }
   }
@@ -577,6 +581,48 @@ function Get-QlikVirtualProxy {
   }
 }
 
+function Import-QlikApp {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$name,
+
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$file,
+
+    [string]$replace,
+    [switch]$upload
+  )
+  
+  PROCESS {
+    $path = "/qrs/app/{0}?name=$name"
+    If( $replace ) { $path += "&replace=$replace" }
+    If( $upload ) {
+      $path = $path -f 'upload'
+      return UploadFile $path $file
+    } else {
+      $path = $path -f 'import'
+      return Post-RestUri $path $file
+    }
+  }
+}
+
+function Import-QlikObject {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
+    [PSObject[]]$object
+  )
+  
+  PROCESS {
+    $object | foreach {
+      $path = "/qrs/{0}" -F $_.schemaPath
+      $json = $_ | ConvertTo-Json -Compress -Depth 5
+      Post-RestUri $path $json
+    }
+  }
+}
+
 function New-QlikCustomProperty {
   [CmdletBinding()]
   param (
@@ -609,19 +655,36 @@ function New-QlikDataConnection {
     [parameter(Position=1)]
     [string]$connectionstring,
     [parameter(Position=2)]
-    [string]$type
+    [string]$type,
+    [string[]]$tags,
+    [string]$username,
+    [string]$password
   )
 
   PROCESS {
-    $json = (@{
+    $json = @{
       customProperties=@();
       engineObjectId=[Guid]::NewGuid();
-      username="";
-      tags=@();
+      username=$username;
+      password=$password;
       name=$name;
       connectionstring=$connectionstring;
-      type=$type;
-    } | ConvertTo-Json -Compress -Depth 5)
+      type=$type
+    }
+    
+    If( $tags ) {
+      $prop = @(
+        $tags | foreach {
+          $p = Get-QlikTag -filter "name eq '$_'"
+          @{
+            id = $p.id
+          }
+        }
+      )
+      $json.tags = $prop
+    }
+
+    $json = $json | ConvertTo-Json -Compress -Depth 5
 
     return Post-RestUri "/qrs/dataconnection" $json
   }
@@ -670,6 +733,9 @@ function New-QlikNode {
 function New-QlikRule {
   [CmdletBinding()]
   param (
+    [parameter(ValueFromPipeline=$true)]
+    [PSObject]$object,
+    
     [string]$name,
     
     [ValidateSet("License","Security","Sync")]
@@ -690,28 +756,32 @@ function New-QlikRule {
   )
   
   PROCESS {
-    # category is case-sensitive so convert to Title Case
-    $category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
-    switch ($rulecontext)
-    {
-      both { $context = 0 }
-      hub { $context = 1 }
-      qmc { $context = 2 }
+    If( $object ) {
+      $json = $object | ConvertTo-Json -Compress -Depth 5
+    } else {
+      # category is case-sensitive so convert to Title Case
+      $category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
+      switch ($rulecontext)
+      {
+        both { $context = 0 }
+        hub { $context = 1 }
+        qmc { $context = 2 }
+      }
+      
+      $json = (@{
+        category = $category;
+        type = "Custom";
+        rule = $rule;
+        name = $name;
+        resourceFilter = $resourceFilter;
+        actions = $actions;
+        comment = $comment;
+        disabled = $disabled.IsPresent;
+        ruleContext = $context;
+        tags = @();
+        schemaPath = "SystemRule"
+      } | ConvertTo-Json -Compress)
     }
-    
-    $json = (@{
-      category = $category;
-      type = "Custom";
-      rule = $rule;
-      name = $name;
-      resourceFilter = $resourceFilter;
-      actions = $actions;
-      comment = $comment;
-      disabled = $disabled.IsPresent;
-      ruleContext = $context;
-      tags = @();
-      schemaPath = "SystemRule"
-    } | ConvertTo-Json -Compress)
 
     return Post-RestUri "/qrs/systemrule" $json
   }
@@ -1236,4 +1306,4 @@ function Update-QlikVirtualProxy {
   }
 }
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
