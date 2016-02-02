@@ -61,6 +61,7 @@
     },
     {
       "type": "virtualbox-ovf",
+      "vm_name": "vagrant-w2012r2",
       "source_path": "./output-virtualbox-iso/vagrant-w2012r2.ovf",
       "headless": true,
       "guest_additions_mode": "disable",
@@ -109,6 +110,39 @@
           "setup_files"
         ]
       ]
+    },
+    {
+      "type": "virtualbox-ovf",
+      "name": "virtualbox-sysprep",
+      "source_path": "./output-virtualbox-ovf/vagrant-w2012r2.ovf",
+      "headless": true,
+      "guest_additions_mode": "disable",
+      "boot_wait": "30s",
+      "communicator": "winrm",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "shutdown_command": "c:/windows/system32/sysprep/sysprep.exe /generalize /oobe /quiet /shutdown /unattend:c:/Windows/Temp/Autounattend_sysprep.xml",
+      "shutdown_timeout": "15m",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "2048"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--vram",
+          "64"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "2"
+        ]
+      ]
     }
   ],
   "provisioners": [
@@ -152,15 +186,21 @@
         "./scripts/cleanup.ps1"
       ],
       "only":["virtualbox-ovf"]
+    },
+    {
+      "type": "file",
+      "source": "./answer_files/2012_r2/Autounattend_sysprep.xml",
+      "destination": "c:/Windows/Temp/Autounattend_sysprep.xml",
+      "only":["virtualbox-sysprep"]
     }
   ],
   "post-processors": [
     {
       "type": "vagrant",
       "keep_input_artifact": true,
-      "output": "windows2012r2-{{.Provider}}.box",
+      "output": "windows2012r2-sysprep-{{.Provider}}.box",
       "vagrantfile_template": "vagrantfile-windows_2012_r2.template",
-	    "only":["virtualbox-ovf"]
+	    "only":["virtualbox-sysprep"]
     }
   ]
 }

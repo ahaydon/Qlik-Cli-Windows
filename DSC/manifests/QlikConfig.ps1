@@ -6,7 +6,7 @@ Configuration QlikConfig
   {
     QlikConnect vagrant
     {
-      Username = "sense1\vagrant"
+      Username = "$($AllNodes.Where{$_.Central}.NodeName)\vagrant"
       Computername = $AllNodes.Where{$_.Central}.NodeName
     }
 
@@ -85,7 +85,7 @@ Configuration QlikConfig
     QlikDataConnection ServerLogFolder
     {
       Name = "ServerLogFolder"
-      ConnectionString = "\\sense1\QlikLog"
+      ConnectionString = "\\$($AllNodes.Where{$_.Central}.NodeName)\QlikLog"
       Type = "Folder"
       Ensure = "Present"
       DependsOn = "[xSmbShare]QlikLog", "[QlikLicense]SiteLicense"
@@ -94,7 +94,7 @@ Configuration QlikConfig
     QlikDataConnection ArchivedLogsFolder
     {
       Name = "ArchivedLogsFolder"
-      ConnectionString = "\\sense1\QlikArchiveLog"
+      ConnectionString = "\\$($AllNodes.Where{$_.Central}.NodeName)\QlikArchiveLog"
       Type = "Folder"
       Ensure = "Present"
       DependsOn = "[xSmbShare]QlikArchiveLog", "[QlikLicense]SiteLicense"
@@ -136,7 +136,7 @@ Configuration QlikConfig
       Category = "license"
       Actions = 1
       Comment = "Rule to setup automatic user access"
-      RuleContext = "hub"
+      #RuleContext = "hub"
       Ensure = "Present"
       DependsOn = "[QlikLicense]SiteLicense"
     }
@@ -193,7 +193,7 @@ Configuration QlikConfig
     {
       Name                  = "QRS-Sync"
       DisplayName           = "Qlik Sense Repository Replication"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -207,7 +207,7 @@ Configuration QlikConfig
     {
       Name                  = "QRS-WebSocket"
       DisplayName           = "Qlik Sense Repository Service (WebSocket)"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -221,7 +221,7 @@ Configuration QlikConfig
     {
       Name                  = "QRS"
       DisplayName           = "Qlik Sense Repository Service (REST)"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -235,7 +235,7 @@ Configuration QlikConfig
     {
       Name                  = "QSS-Master"
       DisplayName           = "Qlik Sense Scheduler Master"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -249,7 +249,7 @@ Configuration QlikConfig
     {
       Name                  = "QSS-Slave"
       DisplayName           = "Qlik Sense Scheduler Slave"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -263,7 +263,7 @@ Configuration QlikConfig
     {
       Name                  = "QES"
       DisplayName           = "Qlik Sense Engine"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -277,7 +277,7 @@ Configuration QlikConfig
     {
       Name                  = "QPS"
       DisplayName           = "Qlik Sense Proxy HTTPS"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -291,7 +291,7 @@ Configuration QlikConfig
     {
       Name                  = "QPS-Auth"
       DisplayName           = "Qlik Sense Proxy Authentication HTTPS"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"
@@ -305,7 +305,7 @@ Configuration QlikConfig
     {
       Name                  = "Qlik-Cert"
       DisplayName           = "Qlik Sense Certificate Distribution"
-      DisplayGroup          = "Qlik Sense"
+      Group                 = "Qlik Sense"
       Ensure                = "Present"
       Action                = "Allow"
       Enabled               = "True"

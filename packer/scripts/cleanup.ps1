@@ -25,14 +25,23 @@ Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
   'Server-Media-Foundation',
   'Powershell-ISE') | Remove-WindowsFeature
 
- Get-WindowsFeature | 
-? { $_.InstallState -eq 'Available' } | 
-Uninstall-WindowsFeature -Remove
+$AvailableFeatures = @( 'AD-Domain-Services',
+  'RSAT-AD-PowerShell',
+  'RSAT-AD-Tools',
+  'RSAT-Role-Tools',
+  'RSAT',
+  'GPMC',
+  'RSAT-ADDS',
+  'RSAT-AD-AdminCenter',
+  'RSAT-ADDS-Tools')
+Get-WindowsFeature |
+  ? { -Not ( $AvailableFeatures -Contains $_.Name ) -And $_.InstallState -eq 'Available' } | 
+  Uninstall-WindowsFeature -Remove
 
 # Defrag C
 Optimize-Volume -DriveLetter C
 
-wget http://download.sysinternals.com/files/SDelete.zip -OutFile sdelete.zip
+wget http://download.sysinternals.com/files/sdelete.zip -OutFile sdelete.zip
 [System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
 [System.IO.Compression.ZipFile]::ExtractToDirectory("sdelete.zip", ".") 
 

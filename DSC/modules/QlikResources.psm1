@@ -726,6 +726,9 @@ class QlikVirtualProxy{
   [DscProperty(Mandatory=$false)]
   [string[]]$websocketCrossOriginWhiteList
 
+  [DscProperty(Mandatory=$false)]
+  [string[]]$proxy
+
   [DscProperty(Mandatory)]
   [Ensure]$Ensure
 
@@ -755,7 +758,15 @@ class QlikVirtualProxy{
       }
       else
       {
-        New-QlikVirtualProxy @params
+        $item = New-QlikVirtualProxy @params
+      }
+      
+      if( $this.proxy )
+      {
+        $this.proxy | foreach {
+          $qp = Get-QlikProxy -filter "serverNodeConfiguration.hostName eq '$_'"
+          Add-QlikProxy $qp.id $item.id
+        }
       }
     }
     else
@@ -845,6 +856,18 @@ class QlikVirtualProxy{
             Write-Verbose "Test-HasProperties: websocketCrossOriginWhiteList property value - $($value) not found in desired state"
             return $false
           }
+        }
+      }
+    }
+    
+    if( $this.proxy ) {
+      $proxies = Get-QlikProxy -full -filter "settings.virtualProxies.id eq $($item.id)" | select -ExpandProperty serverNodeConfiguration | select hostName
+      foreach( $proxy in $this.proxy )
+      {
+        if( -Not ($proxies -Contains $proxy) )
+        {
+          Write-Verbose "Test-HasProperties: $proxy not linked"
+          return $false
         }
       }
     }

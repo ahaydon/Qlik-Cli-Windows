@@ -9,6 +9,12 @@ Once the module is loaded you can view a list of available commands by using the
 ```sh
 Get-Help Qlik
 ```
+## Usage
+### Connecting with certificates
+Invoking a cmdlet will trigger the Connect-Qlik command with default parameters, this will attempt to locate a certificate from the certificate stores. Alternatively a certificate can be piped into the cmdlet using built-in powershell cmdlets to retrieve the certificate from the Windows certificate store.
+```sh
+gci cert:currentuser\my | where { $_.friendlyname -eq 'QlikClient' } | Connect-Qlik sense-central
+```
 ## Examples
 A number of files are provided to demonstrate the use of the module with Vagrant to automate the deployment of a multi-node Qlik Sense site, this requires that Vagrant and VirtualBox are installed and can be used by running commands in their relevant folders. See readme files in each of the sub-folders for more information.
 
