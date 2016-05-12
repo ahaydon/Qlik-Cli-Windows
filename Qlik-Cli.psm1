@@ -1620,14 +1620,11 @@ function Update-QlikProxy {
     [Int]$MaxHeaderLines,
 
     [ValidateRange(1,65536)]
-    [Int]$RestListenPort,
-
-    [HashTable]$params
-
+    [Int]$RestListenPort
   )
 
   PROCESS {
-    $proxy = Get-QlikProxy -Id $id -params $params
+    $proxy = Get-QlikProxy -Id $id
     $proxy.settings.listenPort = $listenPort
     $proxy.settings.allowHttp = $allowHttp
     $proxy.settings.unencryptedListenPort = $unencryptedListenPort
@@ -1640,7 +1637,7 @@ function Update-QlikProxy {
     $proxy.settings.maxHeaderLines = $maxHeaderLines
     $proxy.settings.restListenPort = $restListenPort
     $json = $proxy | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri -Path "/qrs/proxyservice/$id" -Body $json -Params $params
+    return Put-RestUri -Path "/qrs/proxyservice/$id" $json
   }
 }
 
