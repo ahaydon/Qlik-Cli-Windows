@@ -1625,17 +1625,17 @@ function Update-QlikProxy {
 
   PROCESS {
     $proxy = Get-QlikProxy -Id $id
-    $proxy.settings.listenPort = $listenPort
+    if ($listenPort) { $proxy.settings.listenPort = $listenPort }
     $proxy.settings.allowHttp = $allowHttp
-    $proxy.settings.unencryptedListenPort = $unencryptedListenPort
-    $proxy.settings.authenticationListenPort = $authenticationListenPort
+    if ($unencryptedListenPort) { $proxy.settings.unencryptedListenPort = $unencryptedListenPort }
+    if ($authenticationListenPort) { $proxy.settings.authenticationListenPort = $authenticationListenPort }
     $proxy.settings.kerberosAuthentication = $kerberosAuthentication
-    $proxy.settings.unencryptedAuthenticationListenPort = $unencryptedAuthenticationListenPort
-    if($sslBrowserCertificateThumbprint) { $proxy.settings.sslBrowserCertificateThumbprint = $sslBrowserCertificateThumbprint }
-    $proxy.settings.keepAliveTimeoutSeconds = $keepAliveTimeoutSeconds
-    $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes
-    $proxy.settings.maxHeaderLines = $maxHeaderLines
-    $proxy.settings.restListenPort = $restListenPort
+    if ($unencryptedAuthenticationListenPort) { $proxy.settings.unencryptedAuthenticationListenPort = $unencryptedAuthenticationListenPort }
+    if ($sslBrowserCertificateThumbprint) { $proxy.settings.sslBrowserCertificateThumbprint = $sslBrowserCertificateThumbprint }
+    if ($keepAliveTimeoutSeconds) { $proxy.settings.keepAliveTimeoutSeconds = $keepAliveTimeoutSeconds }
+    if ($maxHeaderSizeBytes) { $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes }
+    if ($maxHeaderLines) { $proxy.settings.maxHeaderLines = $maxHeaderLines }
+    if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
     $json = $proxy | ConvertTo-Json -Compress -Depth 5
     return Put-RestUri -Path "/qrs/proxyservice/$id" $json
   }
