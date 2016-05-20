@@ -1161,18 +1161,19 @@ function New-QlikUserDirectory {
   param (
     [parameter(Mandatory=$false,Position=0)]
     [string]$name,
+    
     [parameter(Mandatory=$false,Position=1)]
     [string]$userDirectoryName,
-    [parameter(Mandatory=$false,Position=2)]
-    [string]$configured,
-    [parameter(Mandatory=$false,Position=3)]
-    [string]$type,
-    [parameter(Mandatory=$false,Position=4)]
-    [string]$syncOnlyLoggedInUsers,
-    [parameter(Mandatory=$false,Position=5)]
-    [string]$syncStatus,
-    [parameter(Mandatory=$false,Position=6)]
-    [System.Object[]]$settings
+    
+	  [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql')]
+	  [string]$type,
+    
+    [string]$configured=$false,
+    [string]$syncOnlyLoggedInUsers=$true,
+    [string]$syncStatus=0,
+	  [string]$configuredError="",
+    [string]$operationalError="",
+    [System.Object[]]$settings = @()
   )
   
   PROCESS {
@@ -1184,9 +1185,9 @@ function New-QlikUserDirectory {
       operational=$false;
       type=$type;
       syncOnlyLoggedInUsers=$syncOnlyLoggedInUsers;
-      syncStatus=0;
-      configuredError="";
-      operationalError="";
+      syncStatus=$syncStatus;
+      configuredError=$configuredError;
+      operationalError=$operationalError;
       settings=$settings
     } | ConvertTo-Json -Compress -Depth 5)
     
