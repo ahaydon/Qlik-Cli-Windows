@@ -1,5 +1,13 @@
 ## About
-Qlik-Cli is a PowerShell module that provides a command line interface for managing a Qlik Sense environment. The module provides a set of commands for viewing and editing configuration settings, as well as managing tasks and other features available through the APIs.
+This is a fork from original ahaydon/Qlik-Cli
+ 
+https://github.com/ahaydon/Qlik-Cli
+
+I have contributed with three new functions that do possible massive export and import of Qlik applications and create Qlik rules from a file with psobjects
+Functions
+	- Export-QlikAppList 
+	- Import-QlikAppList
+	- New-QlikRulesFromFIle
 ## Installation
 The module can be installed by copying the Qlik-Cli.psm1 file to C:\Windows\System32\WindowsPowerShell\v1.0\Modules\Qlik-Cli\, the module will then be loaded and ready to use from the PowerShell console. You can also load the module using the Import-Module command.
 ```sh
