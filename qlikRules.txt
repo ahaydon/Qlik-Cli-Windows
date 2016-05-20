@@ -1,0 +1,13 @@
+@{
+	name = "aaaaaa rule from powershell";
+	disabled = $true;
+	comment = "Esto es una prueba de Powershell";
+	actions = 3;
+	resourceFilter = "App_*";
+	rule = "!user.IsAnonymous()";
+	ruleContext = 0;
+	tags = @();
+	type = "Custom";
+	category = "Security";
+	schemaPath = "SystemRule";
+}

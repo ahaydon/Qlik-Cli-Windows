@@ -66,6 +66,7 @@ function CallRestUri($method, $path, $extraParams) {
   }
   If( $params.Body ) { Write-Verbose $params.Body }
 
+  
   Write-Verbose "Calling $method for $path"
   If( $script:webSession -eq $null ) {
     $result = Invoke-RestMethod -Method $method -Uri $path @params -SessionVariable webSession
@@ -77,9 +78,9 @@ function CallRestUri($method, $path, $extraParams) {
   return $result
 }
 
-function Delete-RestUri($path) {
-  return CallRestUri Delete $path
-}
+
+
+
 
 function Get-RestUri($path, $filter) {
   If( $filter ) {
@@ -90,6 +91,7 @@ function Get-RestUri($path, $filter) {
     }
   }
 
+  
   return CallRestUri Get $path
 }
 
@@ -108,6 +110,7 @@ function Put-RestUri($path, $body) {
     Body = $body
   }
 
+  
   return CallRestUri Put $path $params
 }
 
@@ -197,6 +200,7 @@ function Add-QlikProxy {
   param (
     [parameter(Mandatory=$true,Position=0)]
     [string]$ProxyId,
+
 
     [parameter(Mandatory=$true,Position=1)]
     [string]$VirtualProxyId
@@ -358,6 +362,39 @@ function Export-QlikApp {
   }
 }
 
+function Export-QlikAppList {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0)]
+    [string]$sorting,
+    [string]$path
+  )
+  PROCESS {
+    If( !$path ) { $path = "Exported apps" }
+    If( !(Test-Path $path) ){
+      md $path
+    }
+    If( $sorting ) {
+      $appList = Get-QlikApp -sorting $sorting 
+    } else {
+      $appList = Get-QlikApp
+    }
+    
+    $appListSize = $appList.count
+
+    Write-Verbose "Start AppList export..."
+    Write-Verbose "Num. of apps: $appListSize"
+
+    $count = 1
+    foreach($app in $appList) {
+      Write-Verbose "Downloading app $count of $appListSize..."
+      Export-QlikApp $app.id "$path\$($app.name).qvf"
+      $count++
+    }
+    Write-Verbose "Export finished!"
+  }
+}
+
 function Export-QlikCertificates {
   [CmdletBinding()]
   param (
@@ -397,13 +434,15 @@ function Get-QlikApp {
     [string]$id,
     [string]$filter,
     [switch]$full,
-    [switch]$raw
+    [switch]$raw,
+	[string]$sorting
   )
 
   PROCESS {
     $path = "/qrs/app"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
+	If( $sorting ) { $path += "?orderBy= $sorting" }
     return Get-RestUri $path $filter
   }
 }
@@ -832,6 +871,37 @@ function Import-QlikApp {
   }
 }
 
+
+function Import-QlikAppList {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true, Position=0)]
+    [string]$pathToAppsFolder
+  )
+  PROCESS {
+    If( Test-Path $pathToAppsFolder ) {
+      $appList = dir $pathToAppsFolder *.qvf | select BaseName, Name
+    } else {
+      Write-Host "Exception Message: the path doesn't exist" -ForegroundColor Red
+      return  
+    }
+    $appListSize = $appList.count
+    If( $appListSize -eq 0 ) {
+      Write-Host "Exception Message: there are not apps to import" -ForegroundColor Red
+      return
+    }
+    Write-Verbose "Start AppList import..."
+    Write-Verbose "Num. of apps: $appListSize"
+    $count = 1
+    foreach( $app in $appList ) {
+      Write-Verbose "Importing app $count of $appListSize..."
+      Import-QlikApp $app.BaseName "$pathToAppsFolder\$($app.Name)" -upload
+      $count++
+    }
+    Write-Verbose "Import finished!"
+  }
+}
+
 function Import-QlikExtension {
   [CmdletBinding()]
   param (
@@ -1023,6 +1093,32 @@ function New-QlikRule {
     }
 
     return Post-RestUri "/qrs/systemrule" $json
+  }
+}
+
+function New-QlikRulesFromFile {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true, Position=0)]
+    [string]$pathToRulesFile
+  )
+  PROCESS {
+    If( Test-Path $pathToRulesFile ) {
+      $rulesContent = Get-Content $pathToRulesFile -Raw
+      $ruleObjectRegex = "@{(\s)*((\w)+(\s)*=.+(\s)*)+}"
+      $rules = $rulesContent | Select-String $ruleObjectRegex -AllMatches | foreach { $_.matches }
+      If( $rules.count -eq 0 ) {
+        Write-Host "Exception Message: there are not rules in the specified file" -ForegroundColor Red
+        return 
+      }
+      foreach( $rule in $rules ) {
+        $ruleObject = New-Object PSObject -Property $(Invoke-Expression $rule.value)
+        New-QlikRule $ruleObject
+      }
+    } else {
+      Write-Host "Exception Message: the path doesn't exist" -ForegroundColor Red
+      return 
+    }
   }
 }
 
