@@ -1161,17 +1161,17 @@ function New-QlikUserDirectory {
   param (
     [parameter(Mandatory=$false,Position=0)]
     [string]$name,
-    
+
     [parameter(Mandatory=$false,Position=1)]
     [string]$userDirectoryName,
-    
-	  [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql')]
-	  [string]$type,
-    
+
+    [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql')]
+    [string]$type,
+
     [string]$configured=$false,
     [string]$syncOnlyLoggedInUsers=$true,
     [string]$syncStatus=0,
-	  [string]$configuredError="",
+    [string]$configuredError="",
     [string]$operationalError="",
     [System.Object[]]$settings = @()
   )
