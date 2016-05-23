@@ -1441,11 +1441,11 @@ function Start-QlikTask {
 function Sync-QlikUserDirectory {
   [CmdletBinding()]
   param (
-    [System.Object[]]$guids = @()
+    [System.Guid[]]$guid = @()
   )
   
   PROCESS {
-    $json = ($guids | ConvertTo-Json -Compress -Depth 5)
+    $json = ConvertTo-Json -Compress -Depth 5 $guid
     
     return Post-RestUri "/qrs/userdirectoryconnector/syncuserdirectories" $json
   }
