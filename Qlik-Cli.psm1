@@ -1156,6 +1156,45 @@ function New-QlikUserAccessGroup {
   }
 }
 
+function New-QlikUserDirectory {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$false,Position=0)]
+    [string]$name,
+
+    [parameter(Mandatory=$false,Position=1)]
+    [string]$userDirectoryName,
+
+    [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql')]
+    [string]$type,
+
+    [string]$configured=$false,
+    [string]$syncOnlyLoggedInUsers=$true,
+    [string]$syncStatus=0,
+    [string]$configuredError="",
+    [string]$operationalError="",
+    [System.Object[]]$settings = @()
+  )
+  
+  PROCESS {
+    
+    $json = (@{
+      name=$name;
+      userDirectoryName=$userDirectoryName;
+      configured=$configured;
+      operational=$false;
+      type=$type;
+      syncOnlyLoggedInUsers=$syncOnlyLoggedInUsers;
+      syncStatus=$syncStatus;
+      configuredError=$configuredError;
+      operationalError=$operationalError;
+      settings=$settings
+    } | ConvertTo-Json -Compress -Depth 5)
+    
+    return Post-RestUri "/qrs/UserDirectory" $json
+  }
+}
+
 function Publish-QlikApp {
   [CmdletBinding()]
   param (
