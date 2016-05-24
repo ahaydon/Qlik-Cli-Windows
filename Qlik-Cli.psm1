@@ -1438,6 +1438,19 @@ function Start-QlikTask {
   }
 }
 
+function Sync-QlikUserDirectory {
+  [CmdletBinding()]
+  param (
+    [System.Guid[]]$guid = @()
+  )
+  
+  PROCESS {
+    $json = ConvertTo-Json -Compress -Depth 5 $guid
+    
+    return Post-RestUri "/qrs/userdirectoryconnector/syncuserdirectories" $json
+  }
+}
+
 function Update-QlikApp {
   [CmdletBinding()]
   param (
@@ -1871,4 +1884,4 @@ function Update-QlikVirtualProxy {
   }
 }
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Set-Qlik*, Start-Qlik*, Update-Qlik*, Get-RestUri
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Set-Qlik*, Start-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Get-RestUri
