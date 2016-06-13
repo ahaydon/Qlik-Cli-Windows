@@ -1,5 +1,5 @@
 ## About
-This is a fork from original [ahaydon/Qlik-Cli] (https://github.com/ahaydon/Qlik-Cli])
+This is a fork from original [ahaydon/Qlik-Cli] (https://github.com/ahaydon/Qlik-Cli)
 
 I have contributed with three new functions that do possible massive export and import of Qlik applications and create Qlik rules from a file with psobjects.
 
