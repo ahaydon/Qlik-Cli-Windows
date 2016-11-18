@@ -1694,14 +1694,14 @@ function Update-QlikApp {
   )
 
   PROCESS {
-    $app = Get-QlikApp $id
+    $app = Get-QlikApp $id -raw
     If( $name ) { $app.name = $name }
     If( $description ) { $app.description = $description }
     If( $customProperties ) {
       $prop = @(
         $customProperties | foreach {
           $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'" -raw
           @{
             value = ($p.choiceValues -eq $val[1])[0]
             definition = $p
