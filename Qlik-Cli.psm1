@@ -1,5 +1,10 @@
 $script:guid = "^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$"
 $script:isDate = "^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$"
+if( $qlik_output_raw ) { $rawOutput = $true }
+
+###################################################################################################
+# Internal helper functions
+###################################################################################################
 
 function GetXrfKey() {
   $alphabet = $Null; For ($a=97;$a -le 122;$a++) { $alphabet += ,[char][byte]$a }
@@ -46,6 +51,7 @@ function GetTags($tags) {
 }
 
 function CallRestUri($method, $path, $extraParams) {
+  Write-Verbose "Raw output: $rawOutput"
   If( $Script:prefix -eq $null ) { Connect-Qlik > $null }
   If( ! $path.StartsWith( "http" ) ) {
     $path = $Script:prefix + $path
@@ -74,62 +80,12 @@ function CallRestUri($method, $path, $extraParams) {
     $result = Invoke-RestMethod -Method $method -Uri $path @params -WebSession $script:webSession
   }
 
+  if( !$rawOutput ) {
+    Write-Verbose "Formatting response"
+    $result = FormatOutput($result)
+  }
+
   return $result
-}
-
-function Delete-RestUri($path) {
-  return CallRestUri Delete $path
-}
-
-function Get-RestUri($path, $filter) {
-  If( $filter ) {
-    If( $path.contains("?") ) {
-      $path += "&filter=$filter"
-    } else {
-      $path += "?filter=$filter"
-    }
-  }
-
-  return CallRestUri Get $path
-}
-
-function Post-RestUri($path, $body) {
-  $params = @{
-    ContentType = "application/json"
-    Body = $body
-  }
-
-  return CallRestUri Post $path $params
-}
-
-function Put-RestUri($path, $body) {
-  $params = @{
-    ContentType = "application/json"
-    Body = $body
-  }
-
-  return CallRestUri Put $path $params
-}
-
-function Delete-RestUri($path) {
-  return CallRestUri Delete $path
-}
-
-function DownloadFile($path, $filename) {
-  $params = @{
-    OutFile = $filename
-  }
-
-  return CallRestUri Get $path $params
-}
-
-function UploadFile($path, $filename) {
-  $params = @{
-    InFile = $filename
-    ContentType = "application/vnd.qlik.sense.app"
-  }
-
-  return CallRestUri Post $path $params
 }
 
 function FetchCertificate($storeName, $storeLocation) {
@@ -154,8 +110,9 @@ function FetchCertificate($storeName, $storeLocation) {
 function FormatOutput($objects, $schemaPath) {
   Write-Debug "Resolving enums"
   If( !$Script:enums ) {
+    $rawOutput = $true
     # If enums haven't been read get them and save them for later use
-    $enums = Get-RestUri "/qrs/about/api/enums"
+    $enums = Invoke-QlikGet "/qrs/about/api/enums"
     $Script:enums = $enums | Get-Member -MemberType NoteProperty | foreach { $enums.$($_.Name) }
   }
   If( !$Script:relations ) {
@@ -192,6 +149,10 @@ function FormatOutput($objects, $schemaPath) {
   return $objects
 }
 
+###################################################################################################
+# Cmdlets functions
+###################################################################################################
+
 function Add-QlikProxy {
   [CmdletBinding()]
   param (
@@ -203,12 +164,12 @@ function Add-QlikProxy {
   )
 
   PROCESS {
-    $proxy = Get-QlikProxy $ProxyId
-    $vp = Get-QlikVirtualProxy $VirtualProxyId
+    $proxy = Get-QlikProxy -raw $ProxyId
+    $vp = Get-QlikVirtualProxy -raw $VirtualProxyId
 
     $proxy.settings.virtualProxies += $vp
     $json = $proxy | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/proxyservice/$ProxyId" $json
+    return Invoke-QlikPut "/qrs/proxyservice/$ProxyId" $json
   }
 }
 
@@ -225,7 +186,7 @@ function Add-QlikVirtualProxy {
   )
 
   PROCESS {
-    $proxy = Get-QlikVirtualProxy $id
+    $proxy = Get-QlikVirtualProxy -raw $id
     $params = $psBoundParameters
     If( $params.ContainsKey("loadBalancingServerNodes") )
     {
@@ -243,20 +204,32 @@ function Connect-Qlik {
 <#
 .SYNOPSIS
   Establishes a session with a Qlik Sense server, other Qlik cmdlets will use this session to invoke commands.
+.DESCRIPTION
+  Uses the parameter values to establish a new session with a Sense server, if a valid certificate can be found in the Windows certificate store it will be used unless this is overridden by the certificate parameter. If a valid certificate cannot be found Windows authentication will be attempted using the credentials of the user that is running the PowerShell console.
+.EXAMPLE
+  Connect-Qlik -computername CentralNodeName -username domain\username
 .LINK
   https://github.com/ahaydon/Qlik-Cli
 #>
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName="Certificate")]
   param (
-    [parameter(Mandatory=$false,Position=0)]
     # Name of the Sense server to connect to
-    [string]$computername,
+    [parameter(Position=0)]
+    [string]$Computername,
     # Disable checking of certificate trust
     [switch]$TrustAllCerts,
     # UserId to use with certificate authentication in the format domain\username
-    [string]$username = "$($env:userdomain)\$($env:username)",
-    [parameter(ValueFromPipeline=$true)]
-    [System.Security.Cryptography.X509Certificates.X509Certificate]$certificate
+    [Parameter(ParameterSetName = "Certificate")]
+    [string]$Username = "$($env:userdomain)\$($env:username)",
+    # Client certificate to use for authentication
+    [parameter(ParameterSetName = "Certificate", ValueFromPipeline=$true)]
+    [System.Security.Cryptography.X509Certificates.X509Certificate]$Certificate,
+    # Credentials to use when connecting via proxy
+    [parameter(ParameterSetName = "Credential")]
+    [PSCredential]$Credential,
+    # Use credentials of logged on user for authentication, prevents automatically locating a certificate
+    [parameter(ParameterSetName = "Default")]
+    [switch]$UseDefaultCredentials
   )
 
   PROCESS {
@@ -274,38 +247,43 @@ function Connect-Qlik {
 "@
       [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
     }
-    If( !$certificate ) {
-      $certs = @(FetchCertificate "My" "LocalMachine")
-      Write-Verbose "Found $($certs.Count) certificates in LocalMachine store"
+    If( !$Certificate -And !$Credential -And !$UseDefaultCredentials ) {
+      $certs = @(FetchCertificate "My" "CurrentUser")
+      Write-Verbose "Found $($certs.Count) certificates in CurrentUser store"
       If( $certs.Count -eq 0 ) {
-        $certs = @(FetchCertificate "My" "CurrentUser")
-        Write-Verbose "Found $($certs.Count) certificates in CurrentUser store"
+        $certs = @(FetchCertificate "My" "LocalMachine")
+        Write-Verbose "Found $($certs.Count) certificates in LocalMachine store"
       }
       If( $certs.Count -gt 0 ) {
-        $certificate = $certs[0]
+        $Certificate = $certs[0]
       }
     }
 
-    If( !$certificate ) {
+    If( $Certificate ) {
+      Write-Verbose "Using certificate $($Certificate.FriendlyName)"
+
+      $Script:api_params = @{
+        Certificate=$Certificate
+        Header=@{"X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))}
+      }
+      $port = ":4242"
+    } ElseIf( $Credential ) {
+      Write-Verbose $("Using credentials for {0}" -f $Credential.Username)
+      $Script:api_params = @{
+        Credential=$Credential
+      }
+    } Else {
       Write-Verbose "No valid certificate found, using Windows credentials"
       $Script:api_params = @{
         UseDefaultCredentials=$true
       }
-    } else {
-      Write-Verbose "Using certificate $($certificate.FriendlyName)"
-
-      $Script:api_params = @{
-        Certificate=$certificate
-        Header=@{"X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))}
-      }
-      $port = ":4242"
     }
 
-    If ( $computername ) {
-      If( $computername.ToLower().StartsWith( "http" ) ) {
-        $Script:prefix = $computername
+    If ( $Computername ) {
+      If( $Computername.ToLower().StartsWith( "http" ) ) {
+        $Script:prefix = $Computername
       } else {
-        $Script:prefix = "https://" + $computername + $port
+        $Script:prefix = "https://" + $Computername + $port
       }
     } else {
       $Script:prefix = "https://" + $env:computername + $port
@@ -315,6 +293,7 @@ function Connect-Qlik {
     return $result
   }
 }
+New-Alias -Name Qonnect -Value Connect-Qlik
 
 function Copy-QlikApp {
   [CmdletBinding()]
@@ -331,7 +310,7 @@ function Copy-QlikApp {
       $path += "?name=$name"
     }
 
-    return Post-RestUri $path
+    return Invoke-QlikPost $path
   }
 }
 
@@ -352,8 +331,8 @@ function Export-QlikApp {
       $file = $filename
     }
     Write-Verbose file=$file
-    $app = (Get-RestUri /qrs/app/$id/export).value
-    DownloadFile "/qrs/download/app/$id/$app/temp.qvf" $file
+    $app = (Invoke-QlikGet /qrs/app/$id/export).value
+    Invoke-QlikDownload "/qrs/download/app/$id/$app/temp.qvf" $file
     Write-Verbose "Downloaded $id to $file"
   }
 }
@@ -380,23 +359,28 @@ function Export-QlikCertificates {
     If( $exportFormat ) { $body.exportFormat = $exportFormat }
     $json = $body | ConvertTo-Json -Compress -Depth 5
 
-    return Post-RestUri "/qrs/certificatedistribution/exportcertificates" $json
+    return Invoke-QlikPost "/qrs/certificatedistribution/exportcertificates" $json
   }
 }
 
 function Get-QlikAbout {
   PROCESS {
-    return Get-RestUri "/qrs/about"
+    return Invoke-QlikGet "/qrs/about"
   }
 }
 
 function Get-QlikApp {
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName="Multi")]
   param (
-    [parameter(Position=0)]
+    [parameter(ParameterSetName="Single",Mandatory=$false,Position=0)]
     [string]$id,
+
+    [parameter(ParameterSetName="Multi",Mandatory=$false)]
     [string]$filter,
+
+    [parameter(ParameterSetName="Multi",Mandatory=$false)]
     [switch]$full,
+
     [switch]$raw
   )
 
@@ -404,13 +388,14 @@ function Get-QlikApp {
     $path = "/qrs/app"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
 function Get-QlikAccessTypeInfo {
   PROCESS {
-    return Get-RestUri "/qrs/license/accesstypeinfo"
+    return Invoke-QlikGet "/qrs/license/accesstypeinfo"
   }
 }
 
@@ -422,7 +407,7 @@ function Get-QlikCertificateDistributionPath {
 
   PROCESS {
     $path = "/qrs/certificatedistribution/exportcertificatespath"
-    return Get-RestUri -Path $path -Params $params
+    return Invoke-QlikGet -Path $path -Params $params
   }
 }
 
@@ -440,7 +425,8 @@ function Get-QlikContentLibrary {
     $path = "/qrs/contentlibrary"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -458,7 +444,8 @@ function Get-QlikCustomProperty {
     $path = "/qrs/custompropertydefinition"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -476,7 +463,8 @@ function Get-QlikDataConnection {
     $path = "/qrs/dataconnection"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -494,7 +482,8 @@ function Get-QlikEngine {
     $path = "/qrs/engineservice"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -504,20 +493,58 @@ function Get-QlikExtension {
     [parameter(Position=0)]
     [string]$Id,
     [string]$Filter,
-    [switch]$Full
+    [switch]$Full,
+    [switch]$raw
   )
 
   PROCESS {
     $Path = "/qrs/extension"
     If( $Id ) { $Path += "/$Id" }
     If( $Full ) { $Path += "/full" }
-    return Get-RestUri -Path $Path -Filter $Filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet -Path $Path -Filter $Filter
   }
 }
 
 function Get-QlikLicense {
   PROCESS {
-    return Get-RestUri "/qrs/license"
+    return Invoke-QlikGet "/qrs/license"
+  }
+}
+
+function Get-QlikLicenseAudit {
+  [CmdletBinding()]
+  param (
+    [string]$resourceType,
+    [string]$resourceFilter,
+    [string]$userFilter,
+    [string]$environmentAttributes,
+    [int]$userSkip,
+    [int]$userTake,
+    [int]$resourceSkip,
+    [int]$resourceTake,
+    [switch]$includeNonGrantingRules,
+    [parameter(ValueFromPipelinebyPropertyName=$true)]
+    [alias("id")]
+    [string]$resourceId,
+    [switch]$raw
+  )
+  PROCESS {
+    $params = @{
+      resourceType = $resourceType;
+      resourceFilter = $resourceFilter;
+      userFilter = $userFilter;
+      environmentAttributes = $environmentAttributes;
+      userSkip = $userSkip;
+      userTake = $userTake;
+      resourceSkip = $resourceSkip;
+      resourceTake = $resourceTake;
+    }
+    If( $includeNonGrantingRules ) { $params.includeNonGrantingRules = $true }
+    If( $resourceId ) { $params.resourceFilter = "id eq $resourceId" }
+    $json = $params | ConvertTo-Json -Compress -Depth 5
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikPost "/qrs/systemrule/license/audit" $json
   }
 }
 
@@ -535,7 +562,8 @@ function Get-QlikLoginAccess {
     $path = "/qrs/license/loginAccessType"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -555,7 +583,8 @@ function Get-QlikNode {
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
     If( $count -And (-not ($id -And $full)) ) { $path += "/count" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -573,13 +602,14 @@ function Get-QlikProxy {
     $path = "/qrs/proxyservice"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
 function Get-QlikRelations {
   PROCESS {
-    return Get-RestUri "/qrs/about/api/relations"
+    return Invoke-QlikGet "/qrs/about/api/relations"
   }
 }
 
@@ -597,9 +627,8 @@ function Get-QlikRule {
     $path = "/qrs/systemrule"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    $result = Get-RestUri $path $filter
-    If( !$raw ) { $result = FormatOutput $result }
-    return $result
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -609,14 +638,16 @@ function Get-QlikReloadTask {
     [parameter(Position=0)]
     [string]$Id,
     [string]$Filter,
-    [switch]$Full
+    [switch]$Full,
+    [switch]$raw
   )
 
   PROCESS {
     $path = "/qrs/reloadtask"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri -Path $path -Filter $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet -Path $path -Filter $filter
   }
 }
 
@@ -636,7 +667,40 @@ function Get-QlikScheduler {
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
     If( $count -And (-not ($id -And $full)) ) { $path += "/count" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
+  }
+}
+
+function Get-QlikSession {
+  [CmdletBinding(DefaultParameterSetName="User")]
+  param (
+    [parameter(ParameterSetName="Id",Mandatory=$true,Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id,
+
+    [parameter(ParameterSetName="User",Mandatory=$true,Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$userDirectory,
+
+    [parameter(ParameterSetName="User",Mandatory=$true,Position=1,ValueFromPipelinebyPropertyName=$true)]
+    [string]$userId,
+
+    [alias("vp")]
+    [string]$virtualProxyPrefix,
+
+    [switch]$raw
+  )
+
+  PROCESS {
+    $proxy = Get-QlikProxy local
+    $prefix = "https://$($proxy.serverNodeConfiguration.hostName):$($proxy.settings.restListenPort)/qps"
+    if ($virtualProxyPrefix) { $prefix += "/$virtualProxyPrefix" }
+    if ($id) {
+      $path = "$prefix/session/$id"
+    } else {
+      $path = "$prefix/user/$userDirectory/$userId"
+    }
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path
   }
 }
 
@@ -654,7 +718,8 @@ function Get-QlikStream {
     $path = "/qrs/stream"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -672,7 +737,8 @@ function Get-QlikTag {
     $path = "/qrs/tag"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -691,8 +757,7 @@ function Get-QlikTask {
     If( !$raw ) {
       If( $id ) { $path += "/$id" }
       $path += "/full"
-      $result = Get-RestUri $path $filter
-      $result = FormatOutput $result
+      $result = Invoke-QlikGet $path $filter
       If( !$full ) {
         $result = $result | foreach {
           $props = @{
@@ -708,8 +773,8 @@ function Get-QlikTask {
     } else {
       If( $id ) { $path += "/$id" }
       If( $full ) { $path += "/full" }
-      $result = Get-RestUri $path $filter
-      return $result
+      If( $raw ) { $rawOutput = $true }
+      return Invoke-QlikGet $path $filter
     }
   }
 }
@@ -728,14 +793,34 @@ function Get-QlikUser {
     $path = "/qrs/user"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    $result = Get-RestUri $path $filter
-    if( $raw ) {
+    If( $raw ) { $rawOutput = $true }
+    $result = Invoke-QlikGet $path $filter
+    if( $raw -Or $full ) {
       return $result
     } else {
       $properties = @('name','userDirectory','userId')
-      if( $full ) { $properties += @('roles','inactive','blacklisted','removedExternally') }
+      #if( $full ) { $properties += @('roles','inactive','blacklisted','removedExternally') }
       return $result | select -Property $properties
     }
+  }
+}
+
+function Get-QlikUserAccessType {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0)]
+    [string]$id,
+    [string]$filter,
+    [switch]$full,
+    [switch]$raw
+  )
+
+  PROCESS {
+    $path = "/qrs/license/useraccesstype"
+    If( $id ) { $path += "/$id" }
+    If( $full ) { $path += "/full" }
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -753,7 +838,8 @@ function Get-QlikUserDirectory {
     $path = "/qrs/userdirectory"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -768,7 +854,8 @@ function Get-QlikValidEngines {
     [string]$appId,
     [parameter(Position=3)]
     [ValidateSet("Production","Development","Any")]
-    [string]$loadBalancingPurpose
+    [string]$loadBalancingPurpose,
+    [switch]$raw
   )
 
   PROCESS {
@@ -779,7 +866,8 @@ function Get-QlikValidEngines {
       loadBalancingPurpose = $loadBalancingPurpose
     } | ConvertTo-Json -Compress -Depth 5)
 
-    Post-RestUri "/qrs/loadbalancing/validengines" $json
+    If( $raw ) { $rawOutput = $true }
+    Invoke-QlikPost "/qrs/loadbalancing/validengines" $json
   }
 }
 
@@ -797,7 +885,8 @@ function Get-QlikVirtualProxy {
     $path = "/qrs/virtualproxyconfig"
     If( $id ) { $path += "/$id" }
     If( $full ) { $path += "/full" }
-    return Get-RestUri $path $filter
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
   }
 }
 
@@ -824,10 +913,10 @@ function Import-QlikApp {
     If( $replace ) { $path += "&replace=$replace" }
     If( $upload ) {
       $path = $path -f 'upload'
-      return UploadFile $path $file
+      return Invoke-QlikUpload $path $file
     } else {
       $path = $path -f 'import'
-      return Post-RestUri $path $file
+      return Invoke-QlikPost $path $file
     }
   }
 }
@@ -857,8 +946,111 @@ function Import-QlikObject {
     $object | foreach {
       $path = "/qrs/{0}" -F $_.schemaPath
       $json = $_ | ConvertTo-Json -Compress -Depth 5
-      Post-RestUri $path $json
+      Invoke-QlikPost $path $json
     }
+  }
+}
+
+function Invoke-QlikDelete {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$path
+  )
+  PROCESS {
+    return CallRestUri Delete $path
+  }
+}
+
+function Invoke-QlikGet {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$path,
+    [parameter(Position=1)]
+    [string]$filter
+  )
+  PROCESS {
+    If( $filter ) {
+      If( $path.contains("?") ) {
+        $path += "&filter=$filter"
+      } else {
+        $path += "?filter=$filter"
+      }
+    }
+
+    return CallRestUri Get $path
+  }
+}
+
+function Invoke-QlikPost {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$path,
+    [parameter(Position=1)]
+    [string]$body
+  )
+  PROCESS {
+    $params = @{
+      ContentType = "application/json"
+      Body = $body
+    }
+
+    return CallRestUri Post $path $params
+  }
+}
+
+function Invoke-QlikPut {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$path,
+    [parameter(Position=1)]
+    [string]$body
+  )
+  PROCESS {
+    $params = @{
+      ContentType = "application/json"
+      Body = $body
+    }
+
+    return CallRestUri Put $path $params
+  }
+}
+
+function Invoke-QlikDownload {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$path,
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$filename
+  )
+  PROCESS {
+    $params = @{
+      OutFile = $filename
+    }
+
+    return CallRestUri Get $path $params
+  }
+}
+
+function Invoke-QlikUpload {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$path,
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$filename
+  )
+  PROCESS {
+    $params = @{
+      InFile = $filename
+      ContentType = "application/vnd.qlik.sense.app"
+    }
+
+    return CallRestUri Post $path $params
   }
 }
 
@@ -882,7 +1074,7 @@ function New-QlikCustomProperty {
     if($ChoiceValues) { $json.Add("ChoiceValues", $ChoiceValues) }
     $json = $json | ConvertTo-Json -Compress -Depth 5
 
-    return Post-RestUri "/qrs/custompropertydefinition" $json
+    return Invoke-QlikPost "/qrs/custompropertydefinition" $json
   }
 }
 
@@ -925,7 +1117,7 @@ function New-QlikDataConnection {
 
     $json = $json | ConvertTo-Json -Compress -Depth 5
 
-    return Post-RestUri "/qrs/dataconnection" $json
+    return Invoke-QlikPost "/qrs/dataconnection" $json
   }
 }
 
@@ -963,9 +1155,9 @@ function New-QlikNode {
         printingEnabled=$printingEnabled.IsPresent;
       }
     } | ConvertTo-Json -Compress -Depth 5)
-    $container = Post-RestUri "/qrs/servernodeconfiguration/container" $json
+    $container = Invoke-QlikPost "/qrs/servernodeconfiguration/container" $json
     #Write-Host "http://localhost:4570/certificateSetup"
-    return Get-RestUri "/qrs/servernoderegistration/start/$($container.configuration.id)"
+    return Invoke-QlikGet "/qrs/servernoderegistration/start/$($container.configuration.id)"
   }
 }
 
@@ -1022,7 +1214,7 @@ function New-QlikRule {
       } | ConvertTo-Json -Compress)
     }
 
-    return Post-RestUri "/qrs/systemrule" $json
+    return Invoke-QlikPost "/qrs/systemrule" $json
   }
 }
 
@@ -1069,7 +1261,7 @@ function New-QlikStream {
 
     $json = $stream | ConvertTo-Json -Compress -Depth 5
 
-    return Post-RestUri '/qrs/stream' $json
+    return Invoke-QlikPost '/qrs/stream' $json
   }
 }
 
@@ -1085,7 +1277,62 @@ function New-QlikTag {
       name=$name;
     } | ConvertTo-Json -Compress -Depth 5)
 
-    return Post-RestUri '/qrs/tag' $json
+    return Invoke-QlikPost '/qrs/tag' $json
+  }
+}
+
+function New-QlikUserAccessGroup {
+  [CmdletBinding()]
+  param (
+    [string]$name
+  )
+
+  PROCESS {
+    $json = (@{
+      name=$name
+    } | ConvertTo-Json -Compress -Depth 5)
+
+    return Invoke-QlikPost "/qrs/License/UserAccessGroup" $json
+  }
+}
+
+function New-QlikUserDirectory {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$false,Position=0)]
+    [string]$name,
+
+    [parameter(Mandatory=$false,Position=1)]
+    [string]$userDirectoryName,
+
+    [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql')]
+    [string]$type,
+
+    [string]$configured=$false,
+    [string]$syncOnlyLoggedInUsers=$true,
+    [string]$syncStatus=0,
+    [string]$configuredError="",
+    [string]$operationalError="",
+    [System.Object[]]$settings = @()
+  )
+
+  PROCESS {
+
+    $json = (@{
+      name=$name;
+      userDirectoryName=$userDirectoryName;
+      configured=$configured;
+      operational=$false;
+      type=$type;
+      syncOnlyLoggedInUsers=$syncOnlyLoggedInUsers;
+      syncStatus=$syncStatus;
+      configuredError=$configuredError;
+      operationalError=$operationalError;
+      settings=$settings
+    } | ConvertTo-Json -Compress -Depth 5)
+
+    return Post-RestUri "/qrs/UserDirectory" $json
+    return Invoke-QlikPost "/qrs/License/UserAccessGroup" $json
   }
 }
 
@@ -1137,61 +1384,7 @@ function New-QlikVirtualProxy {
       websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
     } | ConvertTo-Json -Compress -Depth 5)
 
-    return Post-RestUri "/qrs/virtualproxyconfig" $json
-  }
-}
-
-function New-QlikUserAccessGroup {
-  [CmdletBinding()]
-  param (
-    [string]$name
-  )
-
-  PROCESS {
-    $json = (@{
-      name=$name
-    } | ConvertTo-Json -Compress -Depth 5)
-
-    return Post-RestUri "/qrs/License/UserAccessGroup" $json
-  }
-}
-
-function New-QlikUserDirectory {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$false,Position=0)]
-    [string]$name,
-
-    [parameter(Mandatory=$false,Position=1)]
-    [string]$userDirectoryName,
-
-    [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql')]
-    [string]$type,
-
-    [string]$configured=$false,
-    [string]$syncOnlyLoggedInUsers=$true,
-    [string]$syncStatus=0,
-    [string]$configuredError="",
-    [string]$operationalError="",
-    [System.Object[]]$settings = @()
-  )
-  
-  PROCESS {
-    
-    $json = (@{
-      name=$name;
-      userDirectoryName=$userDirectoryName;
-      configured=$configured;
-      operational=$false;
-      type=$type;
-      syncOnlyLoggedInUsers=$syncOnlyLoggedInUsers;
-      syncStatus=$syncStatus;
-      configuredError=$configuredError;
-      operationalError=$operationalError;
-      settings=$settings
-    } | ConvertTo-Json -Compress -Depth 5)
-    
-    return Post-RestUri "/qrs/UserDirectory" $json
+    return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
   }
 }
 
@@ -1221,7 +1414,7 @@ function Publish-QlikApp {
       $path += "&name=$name"
     }
 
-    return Put-RestUri $path
+    return Invoke-QlikPut $path
   }
 }
 
@@ -1265,7 +1458,7 @@ function Remove-QlikApp {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/app/$id"
+    return Invoke-QlikDelete "/qrs/app/$id"
   }
 }
 
@@ -1277,7 +1470,7 @@ function Remove-QlikCustomProperty {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/custompropertydefinition/$id"
+    return Invoke-QlikDelete "/qrs/custompropertydefinition/$id"
   }
 }
 
@@ -1289,7 +1482,7 @@ function Remove-QlikDataConnection {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/dataconnection/$id"
+    return Invoke-QlikDelete "/qrs/dataconnection/$id"
   }
 }
 
@@ -1301,7 +1494,7 @@ function Remove-QlikRule {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/systemrule/$id"
+    return Invoke-QlikDelete "/qrs/systemrule/$id"
   }
 }
 
@@ -1313,7 +1506,7 @@ function Remove-QlikStream {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/stream/$id"
+    return Invoke-QlikDelete "/qrs/stream/$id"
   }
 }
 
@@ -1325,7 +1518,7 @@ function Remove-QlikTag {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/tag/$id"
+    return Invoke-QlikDelete "/qrs/tag/$id"
   }
 }
 
@@ -1337,7 +1530,7 @@ function Remove-QlikTask {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/task/$id"
+    return Invoke-QlikDelete "/qrs/task/$id"
   }
 }
 
@@ -1349,7 +1542,7 @@ function Remove-QlikUser {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/user/$id"
+    return Invoke-QlikDelete "/qrs/user/$id"
   }
 }
 
@@ -1361,7 +1554,7 @@ function Remove-QlikUserDirectory {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/userdirectory/$id"
+    return Invoke-QlikDelete "/qrs/userdirectory/$id"
   }
 }
 
@@ -1373,7 +1566,7 @@ function Remove-QlikVirtualProxy {
   )
 
   PROCESS {
-    return Delete-RestUri "/qrs/virtualproxyconfig/$id"
+    return Invoke-QlikDelete "/qrs/virtualproxyconfig/$id"
   }
 }
 
@@ -1381,7 +1574,25 @@ function Restore-QlikSnapshot {
   [CmdletBinding()]
   param ()
   PROCESS {
-    return Post-RestUri "/qrs/sync/snapshot/restore"
+    return Invoke-QlikPost "/qrs/sync/snapshot/restore"
+  }
+}
+
+function Select-QlikApp {
+  [CmdletBinding()]
+  param (
+    #[parameter(Position=0)]
+    #[string]$id,
+    [string]$filter
+    #[switch]$full,
+    #[switch]$raw
+  )
+
+  PROCESS {
+    $path = "/qrs/selection/app"
+    #If( $id ) { $path += "/$id" }
+    #If( $full ) { $path += "/full" }
+    return Invoke-QlikPost "$path?$filter"
   }
 }
 
@@ -1413,7 +1624,7 @@ function Set-QlikLicense {
       organization = $organization;
       lef = $lef;
     } | ConvertTo-Json
-    Post-RestUri $resource $json
+    Invoke-QlikPost $resource $json
 
     return $result
   }
@@ -1431,10 +1642,29 @@ function Start-QlikTask {
     $path = "/qrs/task"
     If( $wait ) { $sync = "/synchronous" }
     If( $id -match($script:guid) ) {
-      return Post-RestUri "/qrs/task/$id/start$sync"
+      return Invoke-QlikPost "/qrs/task/$id/start$sync"
     } else {
-      return Post-RestUri "/qrs/task/start$($sync)?name=$id"
+      return Invoke-QlikPost "/qrs/task/start$($sync)?name=$id"
     }
+  }
+}
+
+function Switch-QlikApp {
+  [CmdletBinding()]
+  param (
+    # ID of the app that is used to replace another app
+    [parameter(Mandatory=$true,Position=0,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
+    [string]$id,
+
+    # ID of the app to be replaced
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$appId
+  )
+
+  PROCESS {
+
+    return Invoke-QlikPut "/qrs/app/$id/replace?app=$appId"
+
   }
 }
 
@@ -1443,10 +1673,10 @@ function Sync-QlikUserDirectory {
   param (
     [System.Guid[]]$guid = @()
   )
-  
+
   PROCESS {
     $json = ConvertTo-Json -Compress -Depth 5 $guid
-    
+
     return Post-RestUri "/qrs/userdirectoryconnector/syncuserdirectories" $json
   }
 }
@@ -1464,14 +1694,14 @@ function Update-QlikApp {
   )
 
   PROCESS {
-    $app = Get-QlikApp $id
+    $app = Get-QlikApp $id -raw
     If( $name ) { $app.name = $name }
     If( $description ) { $app.description = $description }
     If( $customProperties ) {
       $prop = @(
         $customProperties | foreach {
           $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'" -raw
           @{
             value = ($p.choiceValues -eq $val[1])[0]
             definition = $p
@@ -1494,7 +1724,7 @@ function Update-QlikApp {
     }
 
     $json = $app | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/app/$id" $json
+    return Invoke-QlikPut "/qrs/app/$id" $json
   }
 }
 
@@ -1518,7 +1748,7 @@ function Update-QlikCustomProperty {
     if( $choiceValues ) { $prop.choiceValues = $choiceValues }
     if( $objectTypes ) { $prop.objectTypes = $objectTypes }
     $json = $prop | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/custompropertydefinition/$id" $json
+    return Invoke-QlikPut "/qrs/custompropertydefinition/$id" $json
   }
 }
 
@@ -1532,10 +1762,10 @@ function Update-QlikDataConnection {
   )
 
   PROCESS {
-    $qdc = Get-QlikDataConnection $id
+    $qdc = Get-QlikDataConnection -raw $id
     $qdc.connectionstring = $ConnectionString
     $json = $qdc | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/dataconnection/$id" $json
+    return Invoke-QlikPut "/qrs/dataconnection/$id" $json
   }
 }
 
@@ -1584,7 +1814,7 @@ function Update-QlikEngine {
     $engine.settings.allowDataLineage = $AllowDataLineage
     $engine.settings.standardReload = $StandardReload
     $json = $engine | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri -Path "/qrs/engineservice/$id" -Body $json
+    return Invoke-QlikPut -Path "/qrs/engineservice/$id" -Body $json
   }
 }
 
@@ -1634,7 +1864,7 @@ function Update-QlikNode {
     If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("printingEnabled") ) { $node.printingEnabled = $printingEnabled.IsPresent }
     $json = $node | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/servernodeconfiguration/$id" $json
+    return Invoke-QlikPut "/qrs/servernodeconfiguration/$id" $json
   }
 }
 
@@ -1676,7 +1906,7 @@ function Update-QlikProxy {
   )
 
   PROCESS {
-    $proxy = Get-QlikProxy -Id $id
+    $proxy = Get-QlikProxy -raw -Id $id
     if ($listenPort) { $proxy.settings.listenPort = $listenPort }
     $proxy.settings.allowHttp = $allowHttp
     if ($unencryptedListenPort) { $proxy.settings.unencryptedListenPort = $unencryptedListenPort }
@@ -1736,7 +1966,7 @@ function Update-QlikRule {
     If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
 
     $json = $systemrule | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/systemrule/$id" $json
+    return Invoke-QlikPut "/qrs/systemrule/$id" $json
   }
 }
 
@@ -1776,7 +2006,7 @@ function Update-QlikScheduler {
         $scheduler.settings.engineTimeout = $engineTimeout
     }
     $json = $scheduler | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/schedulerservice/$id" $json
+    return Invoke-QlikPut "/qrs/schedulerservice/$id" $json
   }
 }
 
@@ -1801,7 +2031,7 @@ function Update-QlikReloadTask {
     $task.taskSessionTimeout = $TaskSessionTimeout
     $task.maxRetries = $MaxRetries
     $json = $task | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri -Path "/qrs/reloadtask/$id" -Body $json
+    return Invoke-QlikPut -Path "/qrs/reloadtask/$id" -Body $json
   }
 }
 
@@ -1826,7 +2056,7 @@ function Update-QlikUser {
       $user.tags = GetTags $tags
     }
     $json = $user | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/user/$id" $json
+    return Invoke-QlikPut "/qrs/user/$id" $json
   }
 }
 
@@ -1856,7 +2086,7 @@ function Update-QlikVirtualProxy {
   )
 
   PROCESS {
-    $proxy = Get-QlikVirtualProxy $id
+    $proxy = Get-QlikVirtualProxy -raw $id
     If( $prefix ) { $proxy.prefix = $prefix }
     If( $description ) { $proxy.description = $description }
     If( $sessionCookieHeaderName ) { $proxy.sessionCookieHeaderName = $sessionCookieHeaderName }
@@ -1880,8 +2110,8 @@ function Update-QlikVirtualProxy {
       $proxy.loadBalancingServerNodes = $engines
     }
     $json = $proxy | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri "/qrs/virtualproxyconfig/$id" $json
+    return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
   }
 }
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Set-Qlik*, Start-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Get-RestUri
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik* -alias *
