@@ -168,7 +168,7 @@ function Add-QlikProxy {
     $vp = Get-QlikVirtualProxy -raw $VirtualProxyId
 
     $proxy.settings.virtualProxies += $vp
-    $json = $proxy | ConvertTo-Json -Compress -Depth 5
+    $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/proxyservice/$ProxyId" $json
   }
 }
@@ -357,7 +357,7 @@ function Export-QlikCertificates {
     If( $certificatePassword ) { $body.certificatePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($CertificatePassword)) }
     If( $includeSecretsKey ) { $body.includeSecretsKey = $true }
     If( $exportFormat ) { $body.exportFormat = $exportFormat }
-    $json = $body | ConvertTo-Json -Compress -Depth 5
+    $json = $body | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost "/qrs/certificatedistribution/exportcertificates" $json
   }
@@ -542,7 +542,7 @@ function Get-QlikLicenseAudit {
     }
     If( $includeNonGrantingRules ) { $params.includeNonGrantingRules = $true }
     If( $resourceId ) { $params.resourceFilter = "id eq $resourceId" }
-    $json = $params | ConvertTo-Json -Compress -Depth 5
+    $json = $params | ConvertTo-Json -Compress -Depth 10
     If( $raw ) { $rawOutput = $true }
     return Invoke-QlikPost "/qrs/systemrule/license/audit" $json
   }
@@ -864,7 +864,7 @@ function Get-QlikValidEngines {
       proxyPrefix = $proxyPrefix;
       appId = $appId;
       loadBalancingPurpose = $loadBalancingPurpose
-    } | ConvertTo-Json -Compress -Depth 5)
+    } | ConvertTo-Json -Compress -Depth 10)
 
     If( $raw ) { $rawOutput = $true }
     Invoke-QlikPost "/qrs/loadbalancing/validengines" $json
@@ -931,7 +931,7 @@ function Import-QlikExtension {
   PROCESS {
     $Path = "/qrs/extension/upload"
     if($Password) { $Path += "?password=$Password" }
-    return Upload-RestUri -Path $Path -FilePath $ExtensionPath
+    return Invoke-QlikUpload -Path $Path -FilePath $ExtensionPath
   }
 }
 
@@ -945,7 +945,7 @@ function Import-QlikObject {
   PROCESS {
     $object | foreach {
       $path = "/qrs/{0}" -F $_.schemaPath
-      $json = $_ | ConvertTo-Json -Compress -Depth 5
+      $json = $_ | ConvertTo-Json -Compress -Depth 10
       Invoke-QlikPost $path $json
     }
   }
@@ -1072,7 +1072,7 @@ function New-QlikCustomProperty {
       objectTypes = $objectTypes
     }
     if($ChoiceValues) { $json.Add("ChoiceValues", $ChoiceValues) }
-    $json = $json | ConvertTo-Json -Compress -Depth 5
+    $json = $json | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost "/qrs/custompropertydefinition" $json
   }
@@ -1115,7 +1115,7 @@ function New-QlikDataConnection {
       $json.tags = $prop
     }
 
-    $json = $json | ConvertTo-Json -Compress -Depth 5
+    $json = $json | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost "/qrs/dataconnection" $json
   }
@@ -1154,7 +1154,7 @@ function New-QlikNode {
         schedulerEnabled=$schedulerEnabled.IsPresent;
         printingEnabled=$printingEnabled.IsPresent;
       }
-    } | ConvertTo-Json -Compress -Depth 5)
+    } | ConvertTo-Json -Compress -Depth 10)
     $container = Invoke-QlikPost "/qrs/servernodeconfiguration/container" $json
     #Write-Host "http://localhost:4570/certificateSetup"
     return Invoke-QlikGet "/qrs/servernoderegistration/start/$($container.configuration.id)"
@@ -1188,7 +1188,7 @@ function New-QlikRule {
 
   PROCESS {
     If( $object ) {
-      $json = $object | ConvertTo-Json -Compress -Depth 5
+      $json = $object | ConvertTo-Json -Compress -Depth 10
     } else {
       # category is case-sensitive so convert to Title Case
       $category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
@@ -1259,7 +1259,7 @@ function New-QlikStream {
       $stream.tags = $prop
     }
 
-    $json = $stream | ConvertTo-Json -Compress -Depth 5
+    $json = $stream | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost '/qrs/stream' $json
   }
@@ -1275,7 +1275,7 @@ function New-QlikTag {
   PROCESS {
     $json = (@{
       name=$name;
-    } | ConvertTo-Json -Compress -Depth 5)
+    } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost '/qrs/tag' $json
   }
@@ -1290,7 +1290,7 @@ function New-QlikUserAccessGroup {
   PROCESS {
     $json = (@{
       name=$name
-    } | ConvertTo-Json -Compress -Depth 5)
+    } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost "/qrs/License/UserAccessGroup" $json
   }
@@ -1329,10 +1329,9 @@ function New-QlikUserDirectory {
       configuredError=$configuredError;
       operationalError=$operationalError;
       settings=$settings
-    } | ConvertTo-Json -Compress -Depth 5)
+    } | ConvertTo-Json -Compress -Depth 10)
 
-    return Post-RestUri "/qrs/UserDirectory" $json
-    return Invoke-QlikPost "/qrs/License/UserAccessGroup" $json
+    return Invoke-QlikPost "/qrs/UserDirectory" $json
   }
 }
 
@@ -1382,7 +1381,7 @@ function New-QlikVirtualProxy {
       loadBalancingServerNodes=$engines;
       sessionCookieHeaderName=$sessionCookieHeaderName;
       websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
-    } | ConvertTo-Json -Compress -Depth 5)
+    } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
   }
@@ -1675,9 +1674,9 @@ function Sync-QlikUserDirectory {
   )
 
   PROCESS {
-    $json = ConvertTo-Json -Compress -Depth 5 $guid
+    $json = ConvertTo-Json -Compress -Depth 10 $guid
 
-    return Post-RestUri "/qrs/userdirectoryconnector/syncuserdirectories" $json
+    return Invoke-QlikPost "/qrs/userdirectoryconnector/syncuserdirectories" $json
   }
 }
 
@@ -1723,7 +1722,7 @@ function Update-QlikApp {
       $app.tags = $prop
     }
 
-    $json = $app | ConvertTo-Json -Compress -Depth 5
+    $json = $app | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/app/$id" $json
   }
 }
@@ -1747,7 +1746,7 @@ function Update-QlikCustomProperty {
     if( $valueType ) { $prop.valueType = $valueType }
     if( $choiceValues ) { $prop.choiceValues = $choiceValues }
     if( $objectTypes ) { $prop.objectTypes = $objectTypes }
-    $json = $prop | ConvertTo-Json -Compress -Depth 5
+    $json = $prop | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/custompropertydefinition/$id" $json
   }
 }
@@ -1764,7 +1763,7 @@ function Update-QlikDataConnection {
   PROCESS {
     $qdc = Get-QlikDataConnection -raw $id
     $qdc.connectionstring = $ConnectionString
-    $json = $qdc | ConvertTo-Json -Compress -Depth 5
+    $json = $qdc | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/dataconnection/$id" $json
   }
 }
@@ -1813,7 +1812,7 @@ function Update-QlikEngine {
     }
     $engine.settings.allowDataLineage = $AllowDataLineage
     $engine.settings.standardReload = $StandardReload
-    $json = $engine | ConvertTo-Json -Compress -Depth 5
+    $json = $engine | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/engineservice/$id" -Body $json
   }
 }
@@ -1863,7 +1862,7 @@ function Update-QlikNode {
     If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("printingEnabled") ) { $node.printingEnabled = $printingEnabled.IsPresent }
-    $json = $node | ConvertTo-Json -Compress -Depth 5
+    $json = $node | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/servernodeconfiguration/$id" $json
   }
 }
@@ -1918,8 +1917,8 @@ function Update-QlikProxy {
     if ($maxHeaderSizeBytes) { $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes }
     if ($maxHeaderLines) { $proxy.settings.maxHeaderLines = $maxHeaderLines }
     if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
-    $json = $proxy | ConvertTo-Json -Compress -Depth 5
-    return Put-RestUri -Path "/qrs/proxyservice/$id" $json
+    $json = $proxy | ConvertTo-Json -Compress -Depth 10
+    return Invoke-QlikPut "/qrs/proxyservice/$id" $json
   }
 }
 
@@ -1965,7 +1964,7 @@ function Update-QlikRule {
     If( $comment ) { $systemrule.comment = $comment }
     If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
 
-    $json = $systemrule | ConvertTo-Json -Compress -Depth 5
+    $json = $systemrule | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/systemrule/$id" $json
   }
 }
@@ -2005,7 +2004,7 @@ function Update-QlikScheduler {
     if($engineTimeout) {
         $scheduler.settings.engineTimeout = $engineTimeout
     }
-    $json = $scheduler | ConvertTo-Json -Compress -Depth 5
+    $json = $scheduler | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/schedulerservice/$id" $json
   }
 }
@@ -2030,7 +2029,7 @@ function Update-QlikReloadTask {
     $task.enabled = $Enabled
     $task.taskSessionTimeout = $TaskSessionTimeout
     $task.maxRetries = $MaxRetries
-    $json = $task | ConvertTo-Json -Compress -Depth 5
+    $json = $task | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/reloadtask/$id" -Body $json
   }
 }
@@ -2055,7 +2054,7 @@ function Update-QlikUser {
     If( $tags ) {
       $user.tags = GetTags $tags
     }
-    $json = $user | ConvertTo-Json -Compress -Depth 5
+    $json = $user | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/user/$id" $json
   }
 }
@@ -2109,7 +2108,7 @@ function Update-QlikVirtualProxy {
       )
       $proxy.loadBalancingServerNodes = $engines
     }
-    $json = $proxy | ConvertTo-Json -Compress -Depth 5
+    $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
   }
 }
