@@ -2113,4 +2113,48 @@ function Update-QlikVirtualProxy {
   }
 }
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik* -alias *
+function Wait-QlikExecution {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0,ParameterSetName="Execution")]
+    [alias("value")]
+    [string]$executionId,
+
+    [parameter(Mandatory=$true,ValueFromPipelinebyPropertyName=$True,Position=0,ParameterSetName="Task")]
+    [alias("id")]
+    [string]$taskId
+  )
+
+  PROCESS {
+    if ($executionId)
+    {
+      $execution = Invoke-QlikGet "/qrs/executionSession/$executionId"
+      $resultId = $execution.executionResult.Id
+      $taskName = $execution.reloadTask.name
+    }
+    else
+    {
+      $task = Invoke-QlikGet "/qrs/reloadTask/$taskId"
+      $resultId = $task.operational.lastExecutionResult.id
+      $taskName = $task.name
+    }
+    do {
+        # Get task status
+        $rawOutput = $true
+        $result = Invoke-QlikGet "/qrs/executionResult/$resultId"
+
+        # Get internal task status code
+        $taskstatuscode = $result.status
+
+        $result = FormatOutput($result)
+        Write-Progress -Activity $taskName -Status $result.status -CurrentOperation ($result.details | select -Last 1).message
+
+        # Wait for 1 second, in a Production setting this should be set much higher to avoid stressing the QRS API
+        Start-Sleep -Seconds 1
+
+    } until ($taskstatuscode -gt 3) #status code of more than 3 is a completion (both success and fail)
+    return $result
+  }
+}
+
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Wait-Qlik* -alias *
