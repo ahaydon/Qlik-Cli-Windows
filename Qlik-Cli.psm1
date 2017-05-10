@@ -89,12 +89,12 @@ function CallRestUri($method, $path, $extraParams) {
 }
 
 function FetchCertificate($storeName, $storeLocation) {
-  $certExtension = "1.3.6.1.5.5.7.13.3"
+  $certFindValue = "CN=QlikClient"
   $store = New-Object System.Security.Cryptography.X509Certificates.X509Store $storeName, $storeLocation
   $certs = @()
   try {
     $store.Open("ReadOnly")
-    $certs = $store.Certificates.Find("FindByExtension", $certExtension, $false)
+    $certs = $store.Certificates.Find("FindBySubjectDistinguishedName", $certFindValue, $false)
   }
   catch {
     Write-Host "Caught an exception:" -ForegroundColor Red
@@ -173,6 +173,86 @@ function Add-QlikProxy {
   }
 }
 
+function Add-QlikTrigger {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [alias("id")]
+    [string]$taskId,
+    [string[]]$OnSuccess,
+    [string]$date
+  )
+
+  PROCESS {
+    If( $tags ) {
+      $tagArray = @(
+        $tags | foreach {
+          $p = Get-QlikTag -filter "name eq '$_'"
+          @{
+            id = $p.id
+          }
+        }
+      )
+    } else {
+      $tagArray = @();
+    }
+
+    $task = Get-QlikReloadTask -id $taskId -raw
+
+    If($date) {
+      $date = Get-Date -Format yyyy-MM-ddTHH:mm:ss.000Z $date
+      $update = @{
+        schemaEvents = @(@{
+          name = "Daily";
+          enabled = $true;
+          eventType = 0;
+          startDate = "$date";
+          expirationDate = "9999-12-30T23:59:59.999Z";
+          schemaFilterDescription = @("* * - * * * * *");
+          incrementDescription = "0 0 1 0";
+          incrementOption = "2";
+          reloadTask = @{
+            id = $task.id
+          }
+        })
+      }
+    } else {
+      $update = @{
+        compositeEvents = @(
+          @{
+            name="TRANSFORM OnSuccess";
+            enabled=$true;
+            eventType=1;
+            reloadTask = @{
+              id = $task.id
+            }
+            timeConstraint=@{
+      			  seconds = 0;
+      			  minutes = 360;
+      			  hours = 0;
+      			  days = 0;
+            };
+            compositeRules=@($OnSuccess | foreach {
+              @{
+                ruleState=1;
+
+                reloadTask=@{
+                  id=$_
+                }
+              }
+            });
+            privileges=@("read","update","create","delete")
+          }
+        )
+      }
+    }
+
+    $json = $update | ConvertTo-Json -Compress -Depth 10
+
+    return Invoke-QlikPost "/qrs/reloadtask/update" $json
+  }
+}
+
 function Add-QlikVirtualProxy {
   [CmdletBinding()]
   param (
@@ -233,6 +313,11 @@ function Connect-Qlik {
   )
 
   PROCESS {
+    # Since we are connecting we need to clear any variables relating to previous connections
+    $script:api_params = $null
+    $script:prefix = $null
+    $script:webSession = $null
+
     If( $TrustAllCerts ) {
       add-type @"
         using System.Net;
@@ -288,7 +373,7 @@ function Connect-Qlik {
     } else {
       $Script:prefix = "https://" + $env:computername + $port
     }
-    $Script:webSession = $null
+
     $result = Get-QlikAbout
     return $result
   }
@@ -350,7 +435,7 @@ function Export-QlikCertificates {
   )
 
   PROCESS {
-    Write-Verbose "Export path: $(Get-QlikCertificateDistributionPath -Params $params)"
+    Write-Verbose "Export path: $(Get-QlikCertificateDistributionPath)"
     $body = @{
       machineNames = @( $machineNames );
     }
@@ -402,12 +487,11 @@ function Get-QlikAccessTypeInfo {
 function Get-QlikCertificateDistributionPath {
   [CmdletBinding()]
   param (
-    [HashTable]$params
   )
 
   PROCESS {
     $path = "/qrs/certificatedistribution/exportcertificatespath"
-    return Invoke-QlikGet -Path $path -Params $params
+    return Invoke-QlikGet -Path $path
   }
 }
 
@@ -471,7 +555,7 @@ function Get-QlikDataConnection {
 function Get-QlikEngine {
   [CmdletBinding()]
   param (
-    [parameter(Position=0)]
+    [parameter(Position=0, ValueFromPipelinebyPropertyName=$true)]
     [string]$id,
     [string]$filter,
     [switch]$full,
@@ -672,6 +756,27 @@ function Get-QlikScheduler {
   }
 }
 
+function Get-QlikServiceCluster {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0)]
+    [string]$id,
+    [string]$filter,
+    [switch]$count,
+    [switch]$full,
+    [switch]$raw
+  )
+
+  PROCESS {
+    $path = "/qrs/ServiceCluster"
+    If( $id ) { $path += "/$id" }
+    If( $full ) { $path += "/full" }
+    If( $count -And (-not ($id -And $full)) ) { $path += "/count" }
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
+  }
+}
+
 function Get-QlikSession {
   [CmdletBinding(DefaultParameterSetName="User")]
   param (
@@ -782,7 +887,7 @@ function Get-QlikTask {
 function Get-QlikUser {
   [CmdletBinding()]
   param (
-    [parameter(Position=0)]
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
     [string]$id,
     [string]$filter,
     [switch]$full,
@@ -988,12 +1093,13 @@ function Invoke-QlikPost {
   param (
     [parameter(Mandatory=$true,Position=0)]
     [string]$path,
-    [parameter(Position=1)]
-    [string]$body
+    [parameter(Position=1,ValueFromPipeline=$true)]
+    [string]$body,
+    [string]$contentType = "application/json"
   )
   PROCESS {
     $params = @{
-      ContentType = "application/json"
+      ContentType = $contentType
       Body = $body
     }
 
@@ -1278,6 +1384,53 @@ function New-QlikTag {
     } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost '/qrs/tag' $json
+  }
+}
+
+function New-QlikTask {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [alias("id")]
+    [string]$appId,
+    [parameter(Mandatory=$true,Position=1)]
+    [string]$name,
+    [string[]]$tags
+  )
+
+  PROCESS {
+    If( $tags ) {
+      $tagArray = @(
+        $tags | foreach {
+          $p = Get-QlikTag -filter "name eq '$_'" -raw
+          @{
+            id = $p.id
+          }
+        }
+      )
+    } else {
+      $tagArray = @();
+    }
+
+    $task = @{
+      task = @{
+        name = $name;
+        taskType = 0;
+        enabled = $true;
+        taskSessionTimeout = 1440;
+        maxRetries = 0;
+        tags = $tagArray;
+        app = @{
+          id = $appId
+        };
+        isManuallyTriggered = $false;
+        customProperties = @()
+      };
+    }
+
+    $json = $task | ConvertTo-Json -Compress -Depth 10
+
+    return Invoke-QlikPost '/qrs/reloadtask/create' $json
   }
 }
 
@@ -1741,7 +1894,7 @@ function Update-QlikCustomProperty {
   )
 
   PROCESS {
-    $prop = Get-QlikCustomProperty $id
+    $prop = Get-QlikCustomProperty $id -raw
     if( $name ) { $prop.name = $name }
     if( $valueType ) { $prop.valueType = $valueType }
     if( $choiceValues ) { $prop.choiceValues = $choiceValues }
@@ -1787,11 +1940,12 @@ function Update-QlikEngine {
     [Int]$cpuThrottlePercentage,
 
     [Bool]$AllowDataLineage,
-    [Bool]$StandardReload
+    [Bool]$StandardReload,
+    [string]$documentDirectory
   )
 
   PROCESS {
-    $engine = Get-QlikEngine -Id $id -params $params
+    $engine = Get-QlikEngine -Id $id -raw
     Write-Verbose $workingSetSizeMode
     if( $workingSetSizeMode -ne $null ) {
         switch ($workingSetSizeMode) {
@@ -1810,8 +1964,15 @@ function Update-QlikEngine {
     if($cpuThrottlePercentage) {
         $engine.settings.cpuThrottlePercentage = $cpuThrottlePercentage
     }
-    $engine.settings.allowDataLineage = $AllowDataLineage
-    $engine.settings.standardReload = $StandardReload
+    if($documentDirectory) {
+        $engine.settings.documentDirectory = $documentDirectory
+    }
+    if($AllowDataLineage) {
+      $engine.settings.allowDataLineage = $AllowDataLineage
+    }
+    if($StandardReload) {
+      $engine.settings.standardReload = $StandardReload
+    }
     $json = $engine | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/engineservice/$id" -Body $json
   }
@@ -2021,7 +2182,9 @@ function Update-QlikReloadTask {
     [Int]$TaskSessionTimeout,
 
     [ValidateRange(0,20)]
-    [Int]$MaxRetries
+    [Int]$MaxRetries,
+
+    [string[]]$Tags
   )
 
   PROCESS {
@@ -2029,8 +2192,48 @@ function Update-QlikReloadTask {
     $task.enabled = $Enabled
     $task.taskSessionTimeout = $TaskSessionTimeout
     $task.maxRetries = $MaxRetries
+    If ($tags)
+    {
+      $task.tags = @(GetTags $tags)
+    }
     $json = $task | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/reloadtask/$id" -Body $json
+  }
+}
+
+function Update-QlikServiceCluster {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelinebyPropertyName=$true,Position=0)]
+    [Guid] $id,
+
+    [string] $name,
+    [int] $persistenceType,
+    [int] $persistenceMode,
+    [string] $rootFolder,
+    [string] $appFolder,
+    [string] $staticContentRootFolder,
+    [string] $connector32RootFolder,
+    [string] $connector64RootFolder,
+    [string] $archivedLogsRootFolder
+  )
+
+  process {
+    $cluster = Get-QlikServiceCluster $id -raw
+    $sp = $cluster.settings.sharedPersistenceProperties
+
+    if ($name) { $cluster.name = $name }
+    if ($persistenceType) { $cluster.settings.persistenceType = $persistenceType }
+    if ($persistenceMode) { $cluster.settings.persistenceMode = $persistenceMode }
+    if ($rootFolder) { $sp.rootFolder = $rootFolder }
+    if ($appFolder) { $sp.appFolder = $appFolder }
+    if ($staticContentRootFolder) { $sp.staticContentRootFolder = $staticContentRootFolder }
+    if ($connector32RootFolder) { $sp.connector32RootFolder = $connector32RootFolder }
+    if ($connector64RootFolder) { $sp.connector64RootFolder = $connector64RootFolder }
+    if ($archivedLogsRootFolder) { $sp.archivedLogsRootFolder = $archivedLogsRootFolder }
+
+    $json = $cluster | ConvertTo-Json -Compress -Depth 10
+    return Invoke-QlikPut /qrs/ServiceCluster/$id $json
   }
 }
 
