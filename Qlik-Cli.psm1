@@ -1941,13 +1941,16 @@ function Update-QlikEngine {
 
     [Bool]$AllowDataLineage,
     [Bool]$StandardReload,
-    [string]$documentDirectory
+    [string]$documentDirectory,
+    [Int]$documentTimeout,
+    [int]$autosaveInterval,
+    [int]$genericUndoBufferMaxSize
   )
 
   PROCESS {
     $engine = Get-QlikEngine -Id $id -raw
     Write-Verbose $workingSetSizeMode
-    if( $workingSetSizeMode -ne $null ) {
+    if( $workingSetSizeMode ) {
         switch ($workingSetSizeMode) {
             IgnoreMaxLimit { $sizeMode = 0 }
             SoftMaxLimit { $sizeMode = 1 }
@@ -1972,6 +1975,15 @@ function Update-QlikEngine {
     }
     if($StandardReload) {
       $engine.settings.standardReload = $StandardReload
+    }
+    if($documentTimeout) {
+      $engine.settings.documentTimeout = $documentTimeout
+    }
+    if($autosaveInterval) {
+      $engine.settings.autosaveInterval = $autosaveInterval
+    }
+    if($genericUndoBufferMaxSize) {
+      $engine.settings.genericUndoBufferMaxSize = $genericUndoBufferMaxSize
     }
     $json = $engine | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/engineservice/$id" -Body $json
@@ -2259,6 +2271,49 @@ function Update-QlikUser {
     }
     $json = $user | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/user/$id" $json
+  }
+}
+
+function Update-QlikUserDirectory {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [string]$id,
+    
+    [string]$name,
+    [string]$path,
+    [string]$username,
+    [string]$password,
+    [string]$ldapFilter,
+    [int]$timeout,
+    [Int]$pageSize
+  )
+
+  PROCESS {
+    $ud = Get-QlikUserDirectory -Id $id -raw
+    if($name) {
+      $ud.name = $name
+    }
+    if($path) {
+      ($ud.settings | ? name -eq path).value = $path
+    }
+    if($username) {
+      ($ud.settings | ? name -eq 'User name').value = $username
+    }
+    if($password) {
+      ($ud.settings | ? name -eq password).value = $password
+    }
+    if($ldapFilter) {
+      ($ud.settings | ? name -eq 'LDAP Filter').value = $ldapFilter
+    }
+    if($timeout) {
+      ($ud.settings | ? name -eq 'Synchronization timeout in seconds').value = $timeout
+    }
+    if($pageSize) {
+      ($ud.settings | ? name -eq 'Page size').value = $pageSize
+    }
+    $json = $ud | ConvertTo-Json -Compress -Depth 10
+    return Invoke-QlikPut -Path "/qrs/userdirectory/$id" -Body $json
   }
 }
 
