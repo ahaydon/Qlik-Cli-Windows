@@ -1036,7 +1036,7 @@ function Import-QlikExtension {
   PROCESS {
     $Path = "/qrs/extension/upload"
     if($Password) { $Path += "?password=$Password" }
-    return Invoke-QlikUpload -Path $Path -FilePath $ExtensionPath
+    return Invoke-QlikUpload $Path $ExtensionPath
   }
 }
 
