@@ -31,7 +31,6 @@ Once the module is loaded you can view a list of available commands by using the
 ```sh
 Get-Help Qlik
 ```
-## Usage
 ### Connecting with certificates
 Invoking a cmdlet will trigger the Connect-Qlik command with default parameters, this will attempt to locate a certificate from the certificate stores. Alternatively a certificate can be piped into the cmdlet using built-in powershell cmdlets to retrieve the certificate from the Windows certificate store.
 ```sh
