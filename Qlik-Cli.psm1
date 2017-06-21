@@ -2339,7 +2339,7 @@ function Update-QlikVirtualProxy {
     [alias("wsorigin")]
     [string[]]$websocketCrossOriginWhiteList,
 
-    [String]$additionalResponseHeaders
+    [String]$additionalResponseHeaders,
     
     [Int]$anonymousAccessMode
   )
