@@ -2339,7 +2339,9 @@ function Update-QlikVirtualProxy {
     [alias("wsorigin")]
     [string[]]$websocketCrossOriginWhiteList,
 
-    [String]$additionalResponseHeaders
+    [String]$additionalResponseHeaders,
+    
+    [Int]$anonymousAccessMode
   )
 
   PROCESS {
@@ -2350,6 +2352,7 @@ function Update-QlikVirtualProxy {
     If( $psBoundParameters.ContainsKey("authenticationModuleRedirectUri") ) { $proxy.authenticationModuleRedirectUri = $authenticationModuleRedirectUri }
     If( $psBoundParameters.ContainsKey("websocketCrossOriginWhiteList") ) { $proxy.websocketCrossOriginWhiteList = $websocketCrossOriginWhiteList }
     If( $psBoundParameters.ContainsKey("additionalResponseHeaders") ) { $proxy.additionalResponseHeaders = $additionalResponseHeaders }
+    If( $psBoundParameters.ContainsKey("anonymousAccessMode") ) { $proxy.anonymousAccessMode = $anonymousAccessMode }
     If( $psBoundParameters.ContainsKey("loadBalancingServerNodes") ) {
       $engines = @(
         $loadBalancingServerNodes | foreach {
