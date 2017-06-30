@@ -1722,6 +1722,18 @@ function Remove-QlikVirtualProxy {
   }
 }
 
+function Remove-QlikExtension {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$ename
+  )
+
+  PROCESS {
+    return Invoke-QlikDelete "/qrs/extension/name/$ename"
+  }
+}
+
 function Restore-QlikSnapshot {
   [CmdletBinding()]
   param ()
@@ -2279,7 +2291,7 @@ function Update-QlikUserDirectory {
   param (
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
-    
+
     [string]$name,
     [string]$path,
     [string]$username,
@@ -2340,7 +2352,7 @@ function Update-QlikVirtualProxy {
     [string[]]$websocketCrossOriginWhiteList,
 
     [String]$additionalResponseHeaders,
-    
+
     [Int]$anonymousAccessMode
   )
 
