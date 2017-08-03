@@ -2331,6 +2331,9 @@ function Update-QlikVirtualProxy {
 
     [alias("authUri")]
     [string]$authenticationModuleRedirectUri,
+    
+    [alias("winAuthPattern")]
+    [string]$windowsAuthenticationEnabledDevicePattern,
 
     [parameter(ValueFromPipeline=$True)]
     [alias("engine")]
@@ -2353,6 +2356,7 @@ function Update-QlikVirtualProxy {
     If( $psBoundParameters.ContainsKey("websocketCrossOriginWhiteList") ) { $proxy.websocketCrossOriginWhiteList = $websocketCrossOriginWhiteList }
     If( $psBoundParameters.ContainsKey("additionalResponseHeaders") ) { $proxy.additionalResponseHeaders = $additionalResponseHeaders }
     If( $psBoundParameters.ContainsKey("anonymousAccessMode") ) { $proxy.anonymousAccessMode = $anonymousAccessMode }
+    If( $psBoundParameters.ContainsKey("windowsAuthenticationEnabledDevicePattern") ) { $proxy.windowsAuthenticationEnabledDevicePattern = $windowsAuthenticationEnabledDevicePattern }
     If( $psBoundParameters.ContainsKey("loadBalancingServerNodes") ) {
       $engines = @(
         $loadBalancingServerNodes | foreach {
