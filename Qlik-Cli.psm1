@@ -2020,7 +2020,7 @@ function Update-QlikNode {
   )
 
   PROCESS {
-    $node = Get-QlikNode $id
+    $node = Get-QlikNode $id -raw
     If( $name ) { $node.name = $name }
     If( $nodePurpose ) {
         switch($nodePurpose) {
