@@ -2239,7 +2239,8 @@ function Update-QlikServiceCluster {
     [string] $staticContentRootFolder,
     [string] $connector32RootFolder,
     [string] $connector64RootFolder,
-    [string] $archivedLogsRootFolder
+    [string] $archivedLogsRootFolder,
+    [int] $failoverTimeout
   )
 
   process {
@@ -2255,7 +2256,8 @@ function Update-QlikServiceCluster {
     if ($connector32RootFolder) { $sp.connector32RootFolder = $connector32RootFolder }
     if ($connector64RootFolder) { $sp.connector64RootFolder = $connector64RootFolder }
     if ($archivedLogsRootFolder) { $sp.archivedLogsRootFolder = $archivedLogsRootFolder }
-
+    if ($failoverTimeout) { $sp.failoverTimeout = $failoverTimeout }
+    
     $json = $cluster | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut /qrs/ServiceCluster/$id $json
   }
@@ -2431,6 +2433,17 @@ function Wait-QlikExecution {
 
     } until ($taskstatuscode -gt 3) #status code of more than 3 is a completion (both success and fail)
     return $result
+  }
+}
+function Set-QlikCentral {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id
+  )
+
+  PROCESS {
+    return Invoke-QlikPost "/qrs/failover/tonode/$id"
   }
 }
 
