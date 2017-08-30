@@ -1247,7 +1247,10 @@ function New-QlikNode {
     [switch]$schedulerEnabled,
 
     [alias("printing")]
-    [switch]$printingEnabled
+    [switch]$printingEnabled,
+
+    [alias("failover")]
+    [switch]$failoverCandidate
   )
 
   PROCESS {
@@ -1259,6 +1262,7 @@ function New-QlikNode {
         proxyEnabled=$proxyEnabled.IsPresent;
         schedulerEnabled=$schedulerEnabled.IsPresent;
         printingEnabled=$printingEnabled.IsPresent;
+        failoverCandidate=$failoverCandidate.IsPresent;
       }
     } | ConvertTo-Json -Compress -Depth 10)
     $container = Invoke-QlikPost "/qrs/servernodeconfiguration/container" $json
