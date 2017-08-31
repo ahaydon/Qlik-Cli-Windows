@@ -2439,4 +2439,22 @@ function Set-QlikCentral {
   }
 }
 
+function Update-QlikOdag {
+  [cmdletBinding()]
+  param (
+      [parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelinebyPropertyName=$true,Position=0)]
+      [Bool]$enabled,
+      [int]$maxConcurrentRequests
+      )
+  PROCESS {
+      $rawOutput = $true
+      $id = $(Invoke-QlikGet "/qrs/odagservice").id
+      $odag = Invoke-QlikGet "/qrs/odagservice/$id"
+      $odag.settings.enabled = $enabled
+      If ( $maxConcurrentRequests ) { $odag.settings.maxConcurrentRequests = $maxConcurrentRequests }
+      $json = $odag | ConvertTo-Json -Compress -Depth 10
+      return Invoke-QlikPut "/qrs/odagservice/$id" $json
+      }
+}
+
 Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Wait-Qlik* -alias *
