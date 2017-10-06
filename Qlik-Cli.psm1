@@ -2366,7 +2366,7 @@ function Update-QlikVirtualProxy {
     
     [String]$magicLinkHostUri,
 	
-	  [String]$magicLinkFriendlyName
+    [String]$magicLinkFriendlyName
 
   )
 
@@ -2396,8 +2396,8 @@ function Update-QlikVirtualProxy {
       )
       $proxy.loadBalancingServerNodes = $engines
     }
-  	If( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
-	  If( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) {$proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
+    If( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
+    If( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) {$proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
   }
