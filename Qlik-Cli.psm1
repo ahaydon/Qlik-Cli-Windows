@@ -2362,7 +2362,12 @@ function Update-QlikVirtualProxy {
 
     [String]$additionalResponseHeaders,
 
-    [Int]$anonymousAccessMode
+    [Int]$anonymousAccessMode,
+    
+    [String]$magicLinkHostUri,
+	
+	  [String]$magicLinkFriendlyName
+
   )
 
   PROCESS {
@@ -2391,6 +2396,8 @@ function Update-QlikVirtualProxy {
       )
       $proxy.loadBalancingServerNodes = $engines
     }
+  	If( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
+	  If( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) {$proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
   }
