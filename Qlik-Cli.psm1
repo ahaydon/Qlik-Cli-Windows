@@ -2523,4 +2523,17 @@ function New-QlikContentLibrary {
   }
 }
 
+function Remove-QlikContentLibrary {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id
+  )
+
+  PROCESS {
+    return Invoke-QlikDelete "/qrs/contentlibrary/$id"
+  }
+}
+
+
 Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Wait-Qlik* -alias *
