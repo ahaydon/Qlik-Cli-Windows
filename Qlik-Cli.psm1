@@ -2476,4 +2476,51 @@ function Update-QlikOdag {
       }
 }
 
+function New-QlikContentLibrary {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0)]
+    [string]$name,
+
+    [string[]]$customProperties,
+    [string[]]$tags
+  )
+
+  PROCESS {
+    $stream = @{
+      name=$name;
+    }
+
+    If( $customProperties ) {
+      $prop = @(
+        $customProperties | foreach {
+          $val = $_ -Split "="
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          @{
+            value = ($p.choiceValues -eq $val[1])[0]
+            definition = $p
+          }
+        }
+      )
+      $stream.customProperties = $prop
+    }
+
+    If( $tags ) {
+      $prop = @(
+        $tags | foreach {
+          $p = Get-QlikTag -filter "name eq '$_'"
+          @{
+            id = $p.id
+          }
+        }
+      )
+      $stream.tags = $prop
+    }
+
+    $json = $stream | ConvertTo-Json -Compress -Depth 10
+
+    return Invoke-QlikPost '/qrs/contentlibrary' $json
+  }
+}
+
 Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Wait-Qlik* -alias *
