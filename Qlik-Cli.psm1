@@ -1193,6 +1193,7 @@ function New-QlikDataConnection {
     [string]$connectionstring,
     [parameter(Position=2)]
     [string]$type,
+    [string[]]$customProperties,
     [string[]]$tags,
     [string]$username,
     [string]$password
@@ -1207,6 +1208,20 @@ function New-QlikDataConnection {
       name=$name;
       connectionstring=$connectionstring;
       type=$type
+    }
+
+    If( $customProperties ) {
+      $prop = @(
+        $customProperties | foreach {
+          $val = $_ -Split "="
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          @{
+            value = ($p.choiceValues -eq $val[1])[0]
+            definition = $p
+          }
+        }
+      )
+      $json.customProperties = $prop
     }
 
     If( $tags ) {
