@@ -672,6 +672,30 @@ function Get-QlikNode {
   }
 }
 
+function Get-QlikObject {
+  [CmdletBinding(DefaultParameterSetName="Multi")]
+  param (
+    [parameter(ParameterSetName="Single",Mandatory=$false,Position=0)]
+    [string]$id,
+
+    [parameter(ParameterSetName="Multi",Mandatory=$false)]
+    [string]$filter,
+
+    [parameter(ParameterSetName="Multi",Mandatory=$false)]
+    [switch]$full,
+
+    [switch]$raw
+  )
+
+  PROCESS {
+    $path = "/qrs/app/object"
+    If( $id ) { $path += "/$id" }
+    If( $full ) { $path += "/full" }
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
+  }
+}
+
 function Get-QlikProxy {
   [CmdletBinding()]
   param (
@@ -1589,6 +1613,20 @@ function Publish-QlikApp {
   }
 }
 
+function Publish-QlikObject {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0,ValueFromPipelinebyPropertyName=$True)]
+    [string]$id
+  )
+
+  PROCESS {
+    $path = "/qrs/app/object/$id/publish"
+
+    return Invoke-QlikPut $path
+  }
+}
+
 function Register-QlikNode {
   [CmdletBinding()]
   param (
@@ -2071,6 +2109,26 @@ function Update-QlikNode {
   }
 }
 
+function Update-QlikObject {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [string]$id,
+
+    [string]$owner,
+    [bool]$approved
+  )
+
+  PROCESS {
+    $obj = Get-QlikObject $id -raw
+    If( $owner ) { $obj.owner = @{id=$owner} }
+    If( $psBoundParameters.ContainsKey("approved") ) { $obj.approved = $approved }
+
+    $json = $obj | ConvertTo-Json -Compress -Depth 10
+    return Invoke-QlikPut "/qrs/app/object/$id" $json
+  }
+}
+
 function Update-QlikProxy {
   [CmdletBinding()]
   param (
@@ -2276,7 +2334,7 @@ function Update-QlikServiceCluster {
     if ($connector64RootFolder) { $sp.connector64RootFolder = $connector64RootFolder }
     if ($archivedLogsRootFolder) { $sp.archivedLogsRootFolder = $archivedLogsRootFolder }
     if ($failoverTimeout) { $sp.failoverTimeout = $failoverTimeout }
-    
+
     $json = $cluster | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut /qrs/ServiceCluster/$id $json
   }
@@ -2364,7 +2422,7 @@ function Update-QlikVirtualProxy {
 
     [alias("authUri")]
     [string]$authenticationModuleRedirectUri,
-    
+
     [alias("winAuthPattern")]
     [string]$windowsAuthenticationEnabledDevicePattern,
 
@@ -2378,9 +2436,9 @@ function Update-QlikVirtualProxy {
     [String]$additionalResponseHeaders,
 
     [Int]$anonymousAccessMode,
-    
+
     [String]$magicLinkHostUri,
-	
+
     [String]$magicLinkFriendlyName
 
   )
