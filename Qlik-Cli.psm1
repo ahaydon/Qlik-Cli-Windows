@@ -1477,6 +1477,28 @@ function New-QlikTask {
   }
 }
 
+function New-QlikUser {
+  [CmdletBinding()]
+  param (
+    [string]$userId,
+    [string]$userDirectory,
+    [string]$name = $userId,
+    [string[]]$roles
+  )
+
+  PROCESS {
+    $user = @{
+      userId=$userId;
+      userDirectory=$userDirectory;
+      name=$name
+    }
+    if($roles) { $user.roles = $roles }
+    $json = $user | ConvertTo-Json -Compress -Depth 10
+
+    return Invoke-QlikPost "/qrs/user" $json
+  }
+}
+
 function New-QlikUserAccessGroup {
   [CmdletBinding()]
   param (
@@ -2348,12 +2370,14 @@ function Update-QlikUser {
 
     [string[]]$customProperties,
     [string[]]$tags,
+    [string]$name,
     [string[]]$roles
   )
 
   PROCESS {
     $user = Get-QlikUser $id -raw
     If( $roles ) { $user.roles = $roles }
+    If( $name ) { $user.name = $name }
     If( $customProperties ) {
       $user.customProperties = @(GetCustomProperties $customProperties)
     }
