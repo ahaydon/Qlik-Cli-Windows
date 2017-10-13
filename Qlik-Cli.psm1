@@ -378,7 +378,7 @@ function Connect-Qlik {
     return $result
   }
 }
-New-Alias -Name Qonnect -Value Connect-Qlik
+Set-Alias -Name Qonnect -Value Connect-Qlik
 
 function Copy-QlikApp {
   [CmdletBinding()]
@@ -1921,6 +1921,20 @@ function Sync-QlikUserDirectory {
     $json = ConvertTo-Json -Compress -Depth 10 $guid
 
     return Invoke-QlikPost "/qrs/userdirectoryconnector/syncuserdirectories" $json
+  }
+}
+
+function Unpublish-QlikObject {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0,ValueFromPipelinebyPropertyName=$True)]
+    [string]$id
+  )
+
+  PROCESS {
+    $path = "/qrs/app/object/$id/unpublish"
+
+    return Invoke-QlikPut $path
   }
 }
 
