@@ -2647,4 +2647,4 @@ function Remove-QlikContentLibrary {
 }
 
 
-Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Update-Qlik*, Wait-Qlik* -alias *
+Export-ModuleMember -function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Unpublish-Qlik*, Update-Qlik*, Wait-Qlik* -alias *
