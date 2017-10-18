@@ -2376,6 +2376,29 @@ function Update-QlikServiceCluster {
   }
 }
 
+function Update-QlikStream {
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+        [string]$id,
+
+        [string[]]$customProperties,
+        [string[]]$tags
+    )
+
+    PROCESS {
+        $stream = Get-QlikStream $id -raw
+        If( $customProperties ) {
+          $stream.customProperties = @(GetCustomProperties $customProperties)
+        }
+        If( $tags ) {
+          $stream.tags = @(GetTags $tags)
+        }
+        $json = $stream | ConvertTo-Json -Compress -Depth 10
+        return Invoke-QlikPut "/qrs/stream/$id" $json
+    }
+}
+
 function Update-QlikUser {
   [CmdletBinding()]
   param (
