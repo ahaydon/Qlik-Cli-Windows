@@ -2237,7 +2237,7 @@ function Update-QlikRule {
 
     [ValidateSet("hub","qmc","both")]
     [alias("context")]
-    [string]$rulecontext = "both",
+    [string]$rulecontext,
 
     [int]$actions,
     [string]$comment,
