@@ -1669,7 +1669,10 @@ function Register-QlikNode {
     [switch]$schedulerEnabled,
 
     [alias("printing")]
-    [switch]$printingEnabled
+    [switch]$printingEnabled,
+
+    [alias("failover")]
+    [switch]$failoverCandidate
   )
 
   PROCESS {
@@ -2109,7 +2112,8 @@ function Update-QlikNode {
     [switch]$engineEnabled,
     [switch]$proxyEnabled,
     [switch]$schedulerEnabled,
-    [switch]$printingEnabled
+    [switch]$printingEnabled,
+    [switch]$failoverCandidate
   )
 
   PROCESS {
@@ -2140,6 +2144,7 @@ function Update-QlikNode {
     If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("printingEnabled") ) { $node.printingEnabled = $printingEnabled.IsPresent }
+    If( $psBoundParameters.ContainsKey("failoverCandidate") ) { $node.failoverCandidate = $failoverCandidate.IsPresent }
     $json = $node | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/servernodeconfiguration/$id" $json
   }
