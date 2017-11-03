@@ -2233,7 +2233,9 @@ function Update-QlikProxy {
     [Int]$MaxHeaderLines,
 
     [ValidateRange(1,65536)]
-    [Int]$RestListenPort
+    [Int]$RestListenPort,
+
+    [String[]]$customProperties
   )
 
   PROCESS {
@@ -2249,6 +2251,19 @@ function Update-QlikProxy {
     if ($maxHeaderSizeBytes) { $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes }
     if ($maxHeaderLines) { $proxy.settings.maxHeaderLines = $maxHeaderLines }
     if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
+    If( $customProperties ) {
+      $prop = @(
+        $customProperties | foreach {
+          $val = $_ -Split "="
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          @{
+            value = ($p.choiceValues -eq $val[1])[0]
+            definition = $p
+          }
+        }
+      )
+      $proxy.customProperties = $prop
+    }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/proxyservice/$id" $json
   }
