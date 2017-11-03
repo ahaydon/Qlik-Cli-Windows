@@ -1573,7 +1573,22 @@ function New-QlikVirtualProxy {
     [string[]]$loadBalancingServerNodes = "",
 
     [alias("wsorigin")]
-    [string[]]$websocketCrossOriginWhiteList = ""
+    [string[]]$websocketCrossOriginWhiteList = "",
+
+    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+    [String]$authenticationMethod="ticket",
+
+    [String]$samlMetadataIdP="",
+
+    [String]$samlHostUri="",
+
+    [String]$samlEntityId="",
+
+    [String]$samlAttributeUserId="",
+
+    [String]$samlAttributeUserDirectory="",
+
+    [Int]$sessionInactivityTimeout = 30
   )
 
   PROCESS {
@@ -1591,6 +1606,13 @@ function New-QlikVirtualProxy {
     } else {
       $engines = @()
     }
+    $authenticationMethodCode = switch ($authenticationMethod) {
+      "ticket"  { 0 }
+      "static"  { 1 }
+      "dynamic" { 2 }
+      "saml"    { 3 }
+      "jwt"     { 4 }
+    }
 
     $json = (@{
       prefix=$prefix;
@@ -1599,6 +1621,13 @@ function New-QlikVirtualProxy {
       loadBalancingServerNodes=$engines;
       sessionCookieHeaderName=$sessionCookieHeaderName;
       websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
+      sessionInactivityTimeout=$sessionInactivityTimeout;
+      authenticationMethod=$authenticationMethodCode;
+      samlMetadataIdP=$samlMetadataIdP;
+      samlHostUri=$samlHostUri;
+      samlEntityId=$samlEntityId;
+      samlAttributeUserId=$samlAttributeUserId;
+      samlAttributeUserDirectory=$samlAttributeUserDirectory;
     } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
@@ -2505,8 +2534,22 @@ function Update-QlikVirtualProxy {
 
     [String]$magicLinkHostUri,
 
-    [String]$magicLinkFriendlyName
+    [String]$magicLinkFriendlyName,
 
+    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+    [String]$authenticationMethod,
+
+    [String]$samlMetadataIdP,
+
+    [String]$samlHostUri,
+
+    [String]$samlEntityId,
+
+    [String]$samlAttributeUserId,
+
+    [String]$samlAttributeUserDirectory,
+
+    [Int]$sessionInactivityTimeout
   )
 
   PROCESS {
@@ -2537,6 +2580,21 @@ function Update-QlikVirtualProxy {
     }
     If( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
     If( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) {$proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
+    If( $psBoundParameters.ContainsKey("authenticationMethod") ) {
+        $proxy.authenticationMethod = switch ($authenticationMethod) {
+          "ticket"  { 0 }
+          "static"  { 1 }
+          "dynamic" { 2 }
+          "saml"    { 3 }
+          "jwt"     { 4 }
+        }
+    }
+    If( $psBoundParameters.ContainsKey("samlMetadataIdP") ) {$proxy.samlMetadataIdP = $samlMetadataIdP }
+    If( $psBoundParameters.ContainsKey("samlHostUri") ) {$proxy.samlHostUri = $samlHostUri }
+    If( $psBoundParameters.ContainsKey("samlEntityId") ) {$proxy.samlEntityId = $samlEntityId }
+    If( $psBoundParameters.ContainsKey("samlAttributeUserId") ) {$proxy.samlAttributeUserId = $samlAttributeUserId }
+    If( $psBoundParameters.ContainsKey("samlAttributeUserDirectory") ) {$proxy.samlAttributeUserDirectory = $samlAttributeUserDirectory }
+    If( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) {$proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
   }
