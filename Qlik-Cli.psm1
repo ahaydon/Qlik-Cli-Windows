@@ -2235,7 +2235,9 @@ function Update-QlikProxy {
     [ValidateRange(1,65536)]
     [Int]$RestListenPort,
 
-    [String[]]$customProperties
+    [String[]]$customProperties,
+
+    [String[]]$virtualProxies
   )
 
   PROCESS {
@@ -2263,6 +2265,29 @@ function Update-QlikProxy {
         }
       )
       $proxy.customProperties = $prop
+    }
+    If( $null -ne $virtualProxies ) {
+      $set = New-Object System.Collections.Generic.HashSet[string]
+      $virtualProxies | foreach {
+        If( $_ -match $script:guid ) {
+          $res = $set.Add($_)
+        } else {
+          $eid = Get-QlikVirtualProxy -filter "prefix eq '$_'"
+          If( $eid )
+          {
+            $res = $set.Add($eid.id)
+          }
+        }
+      }
+      Get-QlikVirtualProxy -filter "defaultVirtualProxy eq True" | foreach {
+        $res = $set.Add($_.id)
+      }
+      $vProxies = @(
+        $set | foreach {
+          @{ id = $_ }
+        }
+      )
+      $proxy.settings.virtualProxies = $vProxies
     }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/proxyservice/$id" $json
