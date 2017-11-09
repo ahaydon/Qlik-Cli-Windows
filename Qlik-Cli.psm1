@@ -2271,7 +2271,7 @@ function Update-QlikProxy {
       $virtualProxies | foreach {
         If( $_ -match $script:guid ) {
           $res = $set.Add($_)
-        } else {
+        } elseif ($_ -ne '') {
           $eid = Get-QlikVirtualProxy -filter "prefix eq '$_'"
           If( $eid )
           {
@@ -2279,8 +2279,10 @@ function Update-QlikProxy {
           }
         }
       }
-      Get-QlikVirtualProxy -filter "defaultVirtualProxy eq True" | foreach {
-        $res = $set.Add($_.id)
+      $proxy.settings.virtualProxies | foreach {
+        If ($_.defaultVirtualProxy) {
+          $res = $set.Add($_.id)
+        }
       }
       $vProxies = @(
         $set | foreach {
