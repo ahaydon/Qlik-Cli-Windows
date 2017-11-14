@@ -2233,7 +2233,11 @@ function Update-QlikProxy {
     [Int]$MaxHeaderLines,
 
     [ValidateRange(1,65536)]
-    [Int]$RestListenPort
+    [Int]$RestListenPort,
+
+    [String[]]$customProperties,
+
+    [String[]]$virtualProxies
   )
 
   PROCESS {
@@ -2249,6 +2253,44 @@ function Update-QlikProxy {
     if ($maxHeaderSizeBytes) { $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes }
     if ($maxHeaderLines) { $proxy.settings.maxHeaderLines = $maxHeaderLines }
     if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
+    If( $customProperties ) {
+      $prop = @(
+        $customProperties | foreach {
+          $val = $_ -Split "="
+          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+          @{
+            value = ($p.choiceValues -eq $val[1])[0]
+            definition = $p
+          }
+        }
+      )
+      $proxy.customProperties = $prop
+    }
+    If( $null -ne $virtualProxies ) {
+      $set = New-Object System.Collections.Generic.HashSet[string]
+      $virtualProxies | foreach {
+        If( $_ -match $script:guid ) {
+          $res = $set.Add($_)
+        } elseif ($_ -ne '') {
+          $eid = Get-QlikVirtualProxy -filter "prefix eq '$_'"
+          If( $eid )
+          {
+            $res = $set.Add($eid.id)
+          }
+        }
+      }
+      $proxy.settings.virtualProxies | foreach {
+        If ($_.defaultVirtualProxy) {
+          $res = $set.Add($_.id)
+        }
+      }
+      $vProxies = @(
+        $set | foreach {
+          @{ id = $_ }
+        }
+      )
+      $proxy.settings.virtualProxies = $vProxies
+    }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/proxyservice/$id" $json
   }
