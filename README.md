@@ -1,5 +1,7 @@
 ## About
 Qlik-Cli is a PowerShell module that provides a command line interface for managing a Qlik Sense environment. The module provides a set of commands for viewing and editing configuration settings, as well as managing tasks and other features available through the APIs.
+
+The desired state configuration module has now been moved to https://github.com/ahaydon/Qlik-DSC
 ## Usage
 There are many cmdlets in the Qlik-Cli module for viewing and managing Sense resources, a common scenario is triggering tasks from an external application. This can be achieved using the Start-QlikTask command followed by a task name or ID, names with spaces must be enclosed in quotes. e.g.
 ```sh
@@ -23,7 +25,12 @@ If you do not have administrator rights you can change the policy for your user 
 ```sh
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
-The module can be installed by copying the Qlik-Cli.psm1 file to C:\Windows\System32\WindowsPowerShell\v1.0\Modules\Qlik-Cli\, the module will then be loaded and ready to use from the PowerShell console. You can also load the module using the Import-Module command.
+If you have PowerShell 5 or later you can install the module from NuGet using the following command.
+```sh
+Get-PackageProvider -Name NuGet -ForceBootstrap
+Install-Module Qlik-Cli
+```
+Otherwise, the module can be installed by copying the Qlik-Cli.psm1 file to C:\Program Files\WindowsPowerShell\Modules\Qlik-Cli\, the module will then be loaded and ready to use from the PowerShell console. You can also load the module for the current session using the Import-Module command.
 ```sh
 Import-Module Qlik-Cli.psm1
 ```
