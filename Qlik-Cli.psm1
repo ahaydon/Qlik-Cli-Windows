@@ -15,13 +15,17 @@ function GetXrfKey() {
 }
 
 function DeepCopy($data) {
-  $ms = New-Object System.IO.MemoryStream
-  $bf = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-  $bf.Serialize($ms, $data)
-  $ms.Position = 0
-  $dataDeep = $bf.Deserialize($ms)
-  $ms.Close()
-  return $dataDeep
+  $copy=@{}
+  $data.Keys | % {
+    $copy.Add($_, $(
+      if($data.$_.GetType().Name -eq 'HashTable') {
+        DeepCopy($data.$_)
+      } else {
+        $data.$_
+      }
+    ))
+  }
+  return $copy
 }
 
 function GetCustomProperties($customProperties) {
@@ -179,6 +183,7 @@ function Add-QlikTrigger {
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [alias("id")]
     [string]$taskId,
+    [string]$name,
     [string[]]$OnSuccess,
     [string]$date
   )
@@ -201,9 +206,10 @@ function Add-QlikTrigger {
 
     If($date) {
       $date = Get-Date -Format yyyy-MM-ddTHH:mm:ss.000Z $date
+      if(!$name){$name = 'Scheduled'}
       $update = @{
         schemaEvents = @(@{
-          name = "Daily";
+          name = $name;
           enabled = $true;
           eventType = 0;
           startDate = "$date";
@@ -217,10 +223,11 @@ function Add-QlikTrigger {
         })
       }
     } else {
+      if(!$name){$name = 'OnSuccess'}
       $update = @{
         compositeEvents = @(
           @{
-            name="TRANSFORM OnSuccess";
+            name=$name;
             enabled=$true;
             eventType=1;
             reloadTask = @{
@@ -345,7 +352,7 @@ function Connect-Qlik {
     }
 
     If( $Certificate ) {
-      Write-Verbose "Using certificate $($Certificate.FriendlyName)"
+      Write-Verbose "Using certificate $($Certificate.FriendlyName) and user $username"
 
       $Script:api_params = @{
         Certificate=$Certificate
@@ -1038,6 +1045,7 @@ function Import-QlikApp {
     } Else {
       $appName = $(gci $file).BaseName
     }
+    $appName = [System.Web.HttpUtility]::UrlEncode($appName)
     $path = "/qrs/app/{0}?name=$appName"
     If( $replace ) { $path += "&replace=$replace" }
     If( $upload ) {
@@ -1050,6 +1058,26 @@ function Import-QlikApp {
   }
 }
 
+function Import-QlikContent {
+  [CmdletBinding()]
+  param (
+    [string]$AppID,
+    [string]$FilePath,
+    [string]$ExternalPath,
+    [switch]$Overwrite
+  )
+
+  PROCESS {
+    if(!$ExternalPath) {$ExternalPath = (Get-Item $FilePath).Name}
+    $ExternalPath = [System.Web.HttpUtility]::UrlEncode($ExternalPath)
+    $Path = "/qrs/appcontent/$AppID/uploadfile?externalpath=$ExternalPath"
+    if($Overwrite) { $Path += "&overwrite=true" }
+    $mime_type = [System.Web.MimeMapping]::GetMimeMapping((Get-Item $FilePath).FullName)
+    Write-Verbose "Setting content type to $mime_type"
+    return Invoke-QlikUpload $Path $FilePath -ContentType $mime_type
+  }
+}
+
 function Import-QlikExtension {
   [CmdletBinding()]
   param (
@@ -1059,7 +1087,10 @@ function Import-QlikExtension {
 
   PROCESS {
     $Path = "/qrs/extension/upload"
-    if($Password) { $Path += "?password=$Password" }
+    if($Password) {
+      $Password = [System.Web.HttpUtility]::UrlEncode($Password)
+      $Path += "?password=$Password"
+    }
     return Invoke-QlikUpload $Path $ExtensionPath
   }
 }
@@ -1101,6 +1132,7 @@ function Invoke-QlikGet {
   )
   PROCESS {
     If( $filter ) {
+      $filter = [System.Web.HttpUtility]::UrlEncode($filter)
       If( $path.contains("?") ) {
         $path += "&filter=$filter"
       } else {
@@ -1172,12 +1204,14 @@ function Invoke-QlikUpload {
     [parameter(Mandatory=$true,Position=0)]
     [string]$path,
     [parameter(Mandatory=$true,Position=1)]
-    [string]$filename
+    [string]$filename,
+
+    [string]$ContentType = "application/vnd.qlik.sense.app"
   )
   PROCESS {
     $params = @{
       InFile = $filename
-      ContentType = "application/vnd.qlik.sense.app"
+      ContentType = $ContentType
     }
 
     return CallRestUri Post $path $params
@@ -2047,12 +2081,16 @@ function Update-QlikDataConnection {
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
 
-    [string]$ConnectionString
+    [string]$ConnectionString,
+    [string[]]$customProperties,
+    [string[]]$tags
   )
 
   PROCESS {
     $qdc = Get-QlikDataConnection -raw $id
     $qdc.connectionstring = $ConnectionString
+    if( $customProperties ) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
+    if( $tags ) { $qdc.tags = @(GetTags $tags) }
     $json = $qdc | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/dataconnection/$id" $json
   }
@@ -2401,10 +2439,10 @@ function Update-QlikReloadTask {
   )
 
   PROCESS {
-    $task = Get-QlikReloadTask -Id $id -Params $params
-    $task.enabled = $Enabled
-    $task.taskSessionTimeout = $TaskSessionTimeout
-    $task.maxRetries = $MaxRetries
+    $task = Get-QlikReloadTask -Id $id -raw
+    If( $psBoundParameters.ContainsKey("Enabled") ) { $task.enabled = $Enabled }
+    If( $psBoundParameters.ContainsKey("TaskSessionTimeout") ) { $task.taskSessionTimeout = $TaskSessionTimeout }
+    If( $psBoundParameters.ContainsKey("MaxRetries") ) { $task.maxRetries = $MaxRetries }
     If ($tags)
     {
       $task.tags = @(GetTags $tags)
