@@ -30,9 +30,10 @@ If you have PowerShell 5 or later you can install the module from NuGet using th
 Get-PackageProvider -Name NuGet -ForceBootstrap
 Install-Module Qlik-Cli
 ```
-Otherwise, the module can be installed by copying the Qlik-Cli.psm1 file to C:\Program Files\WindowsPowerShell\Modules\Qlik-Cli\, the module will then be loaded and ready to use from the PowerShell console. You can also load the module for the current session using the Import-Module command.
+Otherwise, the module can be installed by downloading and extracting the files to C:\Program Files\WindowsPowerShell\Modules\Qlik-Cli\, the module will then be loaded the next time you open a PowerShell console. You can also load the module for the current session using the Import-Module command and providing the name or path to the module.
 ```sh
-Import-Module Qlik-Cli.psm1
+Import-Module Qlik-Cli
+Import-Module .\Qlik-Cli.psd1
 ```
 Once the module is loaded you can view a list of available commands by using the Get-Help PowerShell command.
 ```sh
