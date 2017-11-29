@@ -50,6 +50,7 @@ function Connect-Qlik {
 "@
       [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
     }
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
     If( !$Certificate -And !$Credential -And !$UseDefaultCredentials ) {
       $certs = @(FetchCertificate "My" "CurrentUser")
       Write-Verbose "Found $($certs.Count) certificates in CurrentUser store"
