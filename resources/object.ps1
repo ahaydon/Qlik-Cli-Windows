@@ -36,6 +36,18 @@ function Publish-QlikObject {
   }
 }
 
+function Remove-QlikObject {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id
+  )
+
+  PROCESS {
+    return Invoke-QlikDelete "/qrs/app/object/$id"
+  }
+}
+
 function Unpublish-QlikObject {
   [CmdletBinding()]
   param (
