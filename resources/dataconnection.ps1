@@ -94,6 +94,7 @@ function Update-QlikDataConnection {
     [string]$id,
 
     [string]$ConnectionString,
+    [PSCredential]$Credential,
     [string[]]$customProperties,
     [string[]]$tags
   )
@@ -101,6 +102,10 @@ function Update-QlikDataConnection {
   PROCESS {
     $qdc = Get-QlikDataConnection -raw $id
     $qdc.connectionstring = $ConnectionString
+    if( $Credential ) {
+      $qdc.username = $Credential.GetNetworkCredential().Username
+      $qdc.password = $Credential.GetNetworkCredential().Password
+    }
     if( $customProperties ) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
     if( $tags ) { $qdc.tags = @(GetTags $tags) }
     $json = $qdc | ConvertTo-Json -Compress -Depth 10

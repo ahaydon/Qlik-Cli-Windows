@@ -86,7 +86,7 @@ function Get-QlikVirtualProxy {
 function New-QlikVirtualProxy {
   [CmdletBinding()]
   param (
-    [parameter(Mandatory=$true,Position=0)]
+    [parameter(Position=0)]
     [string]$prefix,
 
     [parameter(Mandatory=$true,Position=1)]

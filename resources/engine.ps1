@@ -63,6 +63,9 @@ function Update-QlikEngine {
     [ValidateRange(0,100)]
     [Int]$cpuThrottlePercentage,
 
+    [ValidateRange(0,256)]
+    [int]$coresToAllocate,
+
     [Bool]$AllowDataLineage,
     [Bool]$StandardReload,
     [string]$documentDirectory,
@@ -90,6 +93,22 @@ function Update-QlikEngine {
     }
     if($cpuThrottlePercentage) {
         $engine.settings.cpuThrottlePercentage = $cpuThrottlePercentage
+    }
+    if($coresToAllocate) {
+        $coremask = ,0 * 8
+        $bin = ''.PadRight($coresToAllocate, '1').PadLeft(256, '0')
+        for ($i=0;$i -lt 8;$i++) {
+          $coremask[$i] = [convert]::ToInt32($bin.Substring($i * 32, 32), 2)
+        }
+
+        $engine.settings.maxCoreMaskPersisted = $coremask[7]
+        $engine.settings.maxCoreMaskHiPersisted = $coremask[6]
+        $engine.settings.maxCoreMaskGrp1Persisted = $coremask[5]
+        $engine.settings.maxCoreMaskGrp1HiPersisted = $coremask[4]
+        $engine.settings.maxCoreMaskGrp2Persisted = $coremask[3]
+        $engine.settings.maxCoreMaskGrp2HiPersisted = $coremask[2]
+        $engine.settings.maxCoreMaskGrp3Persisted = $coremask[1]
+        $engine.settings.maxCoreMaskGrp3HiPersisted = $coremask[0]
     }
     if($documentDirectory) {
         $engine.settings.documentDirectory = $documentDirectory

@@ -20,7 +20,10 @@ function Get-QlikContentLibrary {
 function Import-QlikContent {
   [CmdletBinding()]
   param (
+    [Parameter(ParameterSetName="App")]
     [string]$AppID,
+    [Parameter(ParameterSetName="Library")]
+    [string]$LibraryName,
     [string]$FilePath,
     [string]$ExternalPath,
     [switch]$Overwrite
@@ -29,7 +32,14 @@ function Import-QlikContent {
   PROCESS {
     if(!$ExternalPath) {$ExternalPath = (Get-Item $FilePath).Name}
     $ExternalPath = [System.Web.HttpUtility]::UrlEncode($ExternalPath)
-    $Path = "/qrs/appcontent/$AppID/uploadfile?externalpath=$ExternalPath"
+    switch ($PsCmdlet.ParameterSetName) {
+      'App' {
+        $Path = "/qrs/appcontent/$AppID/uploadfile?externalpath=$ExternalPath"
+      }
+      'Library' {
+        $Path = "/qrs/contentlibrary/$LibraryName/uploadfile?externalpath=$ExternalPath"
+      }
+    }
     if($Overwrite) { $Path += "&overwrite=true" }
     $mime_type = [System.Web.MimeMapping]::GetMimeMapping((Get-Item $FilePath).FullName)
     Write-Verbose "Setting content type to $mime_type"
