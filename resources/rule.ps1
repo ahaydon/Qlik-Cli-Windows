@@ -126,7 +126,7 @@ function Update-QlikRule {
     If( $rulecontext ) { $systemrule.rulecontext = $context }
     If( $actions ) { $systemrule.actions = $actions }
     If( $comment ) { $systemrule.comment = $comment }
-    If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
+    If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent } else { $systemrule.disabled = $disabled.IsPresent }
 
     $json = $systemrule | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/systemrule/$id" $json
