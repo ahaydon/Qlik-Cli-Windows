@@ -17,7 +17,7 @@ function Get-QlikUser {
     if( $raw -Or $full ) {
       return $result
     } else {
-      $properties = @('name','userDirectory','userId')
+      $properties = @('name','userDirectory','userId','id')
       #if( $full ) { $properties += @('roles','inactive','blacklisted','removedExternally') }
       return $result | select -Property $properties
     }
