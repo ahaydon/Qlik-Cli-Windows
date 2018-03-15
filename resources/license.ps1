@@ -99,6 +99,17 @@ function New-QlikUserAccessGroup {
   }
 }
 
+function Remove-QlikUserAccessType {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id
+  )
+  PROCESS {
+    return Invoke-QlikDelete -path "/qrs/license/useraccesstype/$id"
+  }
+}
+
 function Set-QlikLicense {
   [CmdletBinding()]
   param (
