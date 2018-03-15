@@ -22,9 +22,6 @@ function Connect-Qlik {
     # Client certificate to use for authentication
     [parameter(ParameterSetName = "Certificate", ValueFromPipeline=$true)]
     [System.Security.Cryptography.X509Certificates.X509Certificate]$Certificate,
-    # Credentials to use when connecting via proxy
-    [parameter(ParameterSetName = "Credential")]
-    [PSCredential]$Credential,
     # Use credentials of logged on user for authentication, prevents automatically locating a certificate
     [parameter(ParameterSetName = "Default")]
     [switch]$UseDefaultCredentials

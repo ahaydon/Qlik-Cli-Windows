@@ -78,7 +78,7 @@ function Update-QlikUser {
       $user.customProperties = @(GetCustomProperties $customProperties)
     }
     If( $tags ) {
-      $user.tags = GetTags $tags
+      $user.tags = @(GetTags $tags)
     }
     $json = $user | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/user/$id" $json

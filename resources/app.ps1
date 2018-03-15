@@ -10,6 +10,7 @@ function Copy-QlikApp {
   PROCESS {
     $path = "/qrs/app/$id/copy"
     If( $name ) {
+      $name = [System.Web.HttpUtility]::UrlEncode($name)
       $path += "?name=$name"
     }
 
@@ -160,18 +161,30 @@ function Switch-QlikApp {
   [CmdletBinding()]
   param (
     # ID of the app that is used to replace another app
-    [parameter(Mandatory=$true,Position=0,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
+    [parameter(ParameterSetName="Param",Mandatory=$true,Position=0,ValueFromPipelinebyPropertyName=$True)]
     [string]$id,
 
     # ID of the app to be replaced
     [parameter(Mandatory=$true,Position=1)]
-    [string]$appId
+    [string]$appId,
+
+    [parameter(ParameterSetName="Object",Mandatory=$true,ValueFromPipeline=$True)]
+    $InputObject,
+
+    [parameter(ParameterSetName="Object")]
+    [switch]$Passthru
   )
 
   PROCESS {
-
-    return Invoke-QlikPut "/qrs/app/$id/replace?app=$appId"
-
+    if($PsCmdlet.ParameterSetName -eq "Object") {
+      $id = $InputObject.id
+    }
+    $result = Invoke-QlikPut "/qrs/app/$id/replace?app=$appId"
+    if($Passthru) {
+      return $InputObject
+    } else {
+      return $result
+    }
   }
 }
 
