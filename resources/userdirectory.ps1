@@ -91,12 +91,21 @@ function Update-QlikUserDirectory {
     [string]$path,
     [string]$username,
     [string]$password,
+    [PSCredential]$Credential,
     [string]$ldapFilter,
     [int]$timeout,
     [Int]$pageSize
   )
 
   PROCESS {
+    if( $username -Or $password ) {
+      Write-Warning "Use of username/password parameters is deprecated, please use Credential instead."
+    }
+    if( $Credential ) {
+      $username = $Credential.Username
+      $password = $Credential.GetNetworkCredential().Password
+    }
+
     $ud = Get-QlikUserDirectory -Id $id -raw
     if($name) {
       $ud.name = $name

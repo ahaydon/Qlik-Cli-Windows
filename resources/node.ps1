@@ -98,6 +98,18 @@ function Register-QlikNode {
   }
 }
 
+function Remove-QlikNode {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelinebyPropertyName=$true,Position=0)]
+    [string]$id
+  )
+
+  PROCESS {
+    return Invoke-QlikDelete "/qrs/servernodeconfiguration/$id"
+  }
+}
+
 function Update-QlikNode {
   [CmdletBinding()]
   param (
@@ -140,11 +152,11 @@ function Update-QlikNode {
       $node.customProperties = $prop
     }
     If( $tags ) { $node.tags = $tags }
-    If( $psBoundParameters.ContainsKey("engineEnabled") ) { $node.engineEnabled = $engineEnabled.IsPresent }
-    If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled.IsPresent }
-    If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled.IsPresent }
-    If( $psBoundParameters.ContainsKey("printingEnabled") ) { $node.printingEnabled = $printingEnabled.IsPresent }
-    If( $psBoundParameters.ContainsKey("failoverCandidate") ) { $node.failoverCandidate = $failoverCandidate.IsPresent }
+    If( $psBoundParameters.ContainsKey("engineEnabled") ) { $node.engineEnabled = $engineEnabled }
+    If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled }
+    If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled }
+    If( $psBoundParameters.ContainsKey("printingEnabled") ) { $node.printingEnabled = $printingEnabled }
+    If( $psBoundParameters.ContainsKey("failoverCandidate") ) { $node.failoverCandidate = $failoverCandidate }
     $json = $node | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/servernodeconfiguration/$id" $json
   }

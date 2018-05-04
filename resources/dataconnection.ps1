@@ -29,10 +29,18 @@ function New-QlikDataConnection {
     [string[]]$customProperties,
     [string[]]$tags,
     [string]$username,
-    [string]$password
+    [string]$password,
+    [PSCredential]$Credential
   )
 
   PROCESS {
+    if( $username -Or $password ) {
+      Write-Warning "Use of username/password parameters is deprecated, please use Credential instead."
+    }
+    if( $Credential ) {
+      $username = $Credential.GetNetworkCredential().Username
+      $password = $Credential.GetNetworkCredential().Password
+    }
     $json = @{
       customProperties=@();
       engineObjectId=[Guid]::NewGuid();

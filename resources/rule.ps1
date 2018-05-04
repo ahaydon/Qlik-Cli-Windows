@@ -37,7 +37,7 @@ function New-QlikRule {
     [alias("context")]
     [string]$rulecontext = "both",
 
-    [int]$actions,
+    [int64]$actions,
     [string]$comment,
     [switch]$disabled
   )
@@ -105,7 +105,7 @@ function Update-QlikRule {
     [alias("context")]
     [string]$rulecontext,
 
-    [int]$actions,
+    [int64]$actions,
     [string]$comment,
     [switch]$disabled
   )
@@ -126,7 +126,7 @@ function Update-QlikRule {
     If( $rulecontext ) { $systemrule.rulecontext = $context }
     If( $actions ) { $systemrule.actions = $actions }
     If( $comment ) { $systemrule.comment = $comment }
-    If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
+    If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled }
 
     $json = $systemrule | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/systemrule/$id" $json
