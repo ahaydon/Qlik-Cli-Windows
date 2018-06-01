@@ -45,6 +45,37 @@ function Add-QlikVirtualProxy {
   }
 }
 
+function Export-QlikMetadata {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipelinebyPropertyName=$true,Position=0)]
+    [string]$id,
+    [parameter(Position=1)]
+    [string]$filename
+  )
+
+  PROCESS {
+    Write-Verbose filename=$filename
+    If( [string]::IsNullOrEmpty($filename) ) {
+      $vp = Get-QlikVirtualProxy -id $id -raw
+      $file = "$($vp.prefix)_metadata_sp.xml"
+    } else {
+      $file = $filename
+    }
+    Write-Verbose file=$file
+    $export = (Invoke-QlikGet "/qrs/virtualproxyconfig/$id/generate/samlmetadata").value
+    $basename = $file
+    if( $basename.IndexOf('/') -gt 0 ) {
+      $basename = $basename.SubString($basename.LastIndexOf('/') + 1)
+    }
+    if( $basename.IndexOf('\') -gt 0 ) {
+      $basename = $basename.SubString($basename.LastIndexOf('\') + 1)
+    }
+    Invoke-QlikDownload "/qrs/download/samlmetadata/$export/$basename" $file
+    Write-Verbose "Downloaded $id to $file"
+  }
+}
+
 function Get-QlikProxy {
   [CmdletBinding()]
   param (
