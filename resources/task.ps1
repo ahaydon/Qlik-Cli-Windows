@@ -192,7 +192,20 @@ function Remove-QlikTask {
   )
 
   PROCESS {
-    return Invoke-QlikDelete "/qrs/task/$id"
+    $taskType = "ReloadTask"
+    $json = (@{
+      items = @(
+        @{
+          type = $taskType;
+          objectID = $id
+        }
+      )
+    } | ConvertTo-Json -Compress -Depth 10)
+    $selection = Invoke-QlikPost "/qrs/selection" $json
+    $result = Invoke-QlikDelete "/qrs/selection/$($selection.Id)/$taskType"
+    Invoke-QlikDelete "/qrs/selection/$($selection.Id)" | Out-Null
+
+    return $result
   }
 }
 
