@@ -39,13 +39,35 @@ function New-QlikRule {
 
     [int64]$actions,
     [string]$comment,
-    [switch]$disabled
+    [switch]$disabled,
+    $tags
   )
 
   PROCESS {
     If( $object ) {
       $json = $object | ConvertTo-Json -Compress -Depth 10
     } else {
+
+			If ($Tags)
+			{
+				$TagIDs = @(
+					$Tags | ForEach-Object {
+						$QTag = Get-QlikTag -filter "name eq '$_'"
+						if ($null -ne $QTag)
+						{
+							@{ id = $QTag.id }
+						}
+						else
+						{
+							Write-Host "Requested Tag $($_) Not Found. Please Add before trying to use"
+						}
+					}
+				)
+			}
+			else
+			{
+				$TagIDs = @()
+			}
       # category is case-sensitive so convert to Title Case
       $category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
       switch ($rulecontext)
@@ -65,7 +87,7 @@ function New-QlikRule {
         comment = $comment;
         disabled = $disabled.IsPresent;
         ruleContext = $context;
-        tags = @();
+        tags = $TagIDs;
         schemaPath = "SystemRule"
       } | ConvertTo-Json -Compress)
     }
