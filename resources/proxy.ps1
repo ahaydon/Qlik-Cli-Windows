@@ -149,6 +149,9 @@ function New-QlikVirtualProxy {
 
     [String]$samlAttributeUserDirectory="",
 
+    [ValidateSet("sha1","sha256")]
+    [String]$samlSigningAlgorithm="sha1",
+
     [Int]$sessionInactivityTimeout = 30
   )
 
@@ -174,6 +177,10 @@ function New-QlikVirtualProxy {
       "saml"    { 3 }
       "jwt"     { 4 }
     }
+    $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
+      "sha1"   { 0 }
+      "sha256" { 1 }
+    }
 
     $json = (@{
       prefix=$prefix;
@@ -189,6 +196,7 @@ function New-QlikVirtualProxy {
       samlEntityId=$samlEntityId;
       samlAttributeUserId=$samlAttributeUserId;
       samlAttributeUserDirectory=$samlAttributeUserDirectory;
+      samlAttributeSigningAlgorithm=$samlSigningAlgorithmCode;
     } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
@@ -350,6 +358,9 @@ function Update-QlikVirtualProxy {
 
     [String]$samlAttributeUserDirectory,
 
+    [ValidateSet("sha1","sha256")]
+    [String]$samlSigningAlgorithm,
+
     [Int]$sessionInactivityTimeout
   )
 
@@ -395,6 +406,12 @@ function Update-QlikVirtualProxy {
     If( $psBoundParameters.ContainsKey("samlEntityId") ) {$proxy.samlEntityId = $samlEntityId }
     If( $psBoundParameters.ContainsKey("samlAttributeUserId") ) {$proxy.samlAttributeUserId = $samlAttributeUserId }
     If( $psBoundParameters.ContainsKey("samlAttributeUserDirectory") ) {$proxy.samlAttributeUserDirectory = $samlAttributeUserDirectory }
+    If( $psBoundParameters.ContainsKey("samlSigningAlgorithm") ) {
+        $proxy.samlAttributeSigningAlgorithm = switch ($samlSigningAlgorithm) {
+          "sha1"   { 0 }
+          "sha256" { 1 }
+        }
+    }
     If( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) {$proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
