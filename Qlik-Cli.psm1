@@ -80,14 +80,18 @@ function Connect-Qlik {
       }
     }
 
-    If ( $Computername ) {
-      If( $Computername.ToLower().StartsWith( "http" ) ) {
-        $Script:prefix = $Computername
+    if (! $Computername ) {
+      $HostPath = 'C:\ProgramData\Qlik\Sense\Host.cfg'
+      if (Test-Path $HostPath) {
+        $Computername = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($(Get-Content $HostPath)))
       } else {
-        $Script:prefix = "https://" + $Computername + $port
+        $Computername = $env:computername + $port
       }
+    }
+    If( $Computername.ToLower().StartsWith( "http" ) ) {
+      $Script:prefix = $Computername
     } else {
-      $Script:prefix = "https://" + $env:computername + $port
+      $Script:prefix = "https://" + $Computername + $port
     }
 
     $result = Get-QlikAbout

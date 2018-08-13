@@ -35,8 +35,9 @@ function Export-QlikApp {
       $file = $filename
     }
     Write-Verbose file=$file
-    $app = (Invoke-QlikGet /qrs/app/$id/export).value
-    Invoke-QlikDownload "/qrs/download/app/$id/$app/temp.qvf" $file
+    $guid = [guid]::NewGuid()
+    $app = Invoke-QlikPost /qrs/app/$id/export/$($guid)
+    Invoke-QlikDownload -path "$($app.downloadPath)" $file
     Write-Verbose "Downloaded $id to $file"
   }
 }
@@ -74,7 +75,6 @@ function Import-QlikApp {
     [parameter(Position=1)]
     [string]$name,
 
-    [string]$replace,
     [switch]$upload
   )
 
@@ -86,7 +86,6 @@ function Import-QlikApp {
     }
     $appName = [System.Web.HttpUtility]::UrlEncode($appName)
     $path = "/qrs/app/{0}?name=$appName"
-    If( $replace ) { $path += "&replace=$replace" }
     If( $upload ) {
       $path = $path -f 'upload'
       return Invoke-QlikUpload $path $file

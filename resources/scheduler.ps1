@@ -25,7 +25,7 @@ function Update-QlikScheduler {
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
 
-    [ValidateSet("master","slave","both")]
+    [ValidateSet("Master","Slave","MasterAndSlave")]
     [alias("type")]
     [string]$schedulerServiceType,
 
@@ -37,16 +37,9 @@ function Update-QlikScheduler {
   )
 
   PROCESS {
-    $scheduler = Get-QlikScheduler $id
-    Write-Verbose $schedulerServiceType
-    If( $schedulerServiceType -ne $null ) {
-      switch ($schedulerServiceType)
-      {
-        master { $sched_type = 0 }
-        slave { $sched_type = 1 }
-        both { $sched_type = 2 }
-      }
-      $scheduler.settings.schedulerServiceType = $sched_type
+    $scheduler = Get-QlikScheduler $id -raw
+    If($schedulerServiceType) {
+      $scheduler.settings.schedulerServiceType = $schedulerServiceType
     }
     if($maxConcurrentEngines) {
         $scheduler.settings.maxConcurrentEngines = $maxConcurrentEngines

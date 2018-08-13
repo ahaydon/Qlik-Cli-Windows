@@ -149,6 +149,10 @@ function New-QlikVirtualProxy {
 
     [String]$samlAttributeUserDirectory="",
 
+    [hashtable[]]$samlAttributeMap,
+
+    [switch]$samlSlo,
+
     [ValidateSet("sha1","sha256")]
     [String]$samlSigningAlgorithm="sha1",
 
@@ -196,6 +200,8 @@ function New-QlikVirtualProxy {
       samlEntityId=$samlEntityId;
       samlAttributeUserId=$samlAttributeUserId;
       samlAttributeUserDirectory=$samlAttributeUserDirectory;
+      samlAttributeMap=$samlAttributeMap;
+      samlSlo=$samlSlo.IsPresent;
       samlAttributeSigningAlgorithm=$samlSigningAlgorithmCode;
     } | ConvertTo-Json -Compress -Depth 10)
 
@@ -330,7 +336,7 @@ function Update-QlikVirtualProxy {
     [alias("winAuthPattern")]
     [string]$windowsAuthenticationEnabledDevicePattern,
 
-    [parameter(ValueFromPipeline=$True)]
+    [parameter()]
     [alias("engine")]
     [string[]]$loadBalancingServerNodes,
 
@@ -357,6 +363,10 @@ function Update-QlikVirtualProxy {
     [String]$samlAttributeUserId,
 
     [String]$samlAttributeUserDirectory,
+
+    [hashtable[]]$samlAttributeMap,
+
+    [switch]$samlSlo,
 
     [ValidateSet("sha1","sha256")]
     [String]$samlSigningAlgorithm,
@@ -406,12 +416,14 @@ function Update-QlikVirtualProxy {
     If( $psBoundParameters.ContainsKey("samlEntityId") ) {$proxy.samlEntityId = $samlEntityId }
     If( $psBoundParameters.ContainsKey("samlAttributeUserId") ) {$proxy.samlAttributeUserId = $samlAttributeUserId }
     If( $psBoundParameters.ContainsKey("samlAttributeUserDirectory") ) {$proxy.samlAttributeUserDirectory = $samlAttributeUserDirectory }
+    If( $psBoundParameters.ContainsKey("samlAttributeMap") ) {$proxy.samlAttributeMap = $samlAttributeMap }
     If( $psBoundParameters.ContainsKey("samlSigningAlgorithm") ) {
         $proxy.samlAttributeSigningAlgorithm = switch ($samlSigningAlgorithm) {
           "sha1"   { 0 }
           "sha256" { 1 }
         }
     }
+    If( $psBoundParameters.ContainsKey("samlSlo") ) {$proxy.samlSlo = $samlSlo.IsPresent }
     If( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) {$proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
