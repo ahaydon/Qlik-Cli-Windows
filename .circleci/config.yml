@@ -22,7 +22,7 @@ jobs:
       - checkout
       - run:
           name: Publish module to PowerShell Gallery
-          command: pwsh -Command 'Publish-Module -Name Qlik-Cli -NuGetApiKey <apiKey>'
+          command: pwsh -Command 'Write-Host $env:PSG_API_KEY'
 workflows:
   version: 2
   test-and-deploy:
@@ -33,4 +33,4 @@ workflows:
             - test
           filters:
             branches:
-              only: master
+              only: circleci
