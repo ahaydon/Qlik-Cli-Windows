@@ -196,7 +196,8 @@ function Update-QlikApp {
     [string]$name,
     [string]$description,
     [string[]]$customProperties,
-    [string[]]$tags
+    [string[]]$tags,
+    [string]$ownername
   )
 
   PROCESS {
@@ -227,6 +228,11 @@ function Update-QlikApp {
         }
       )
       $app.tags = $prop
+    }
+    
+    If( $ownername ) {
+      $prop = Get-QlikUser -filter "name eq '$($ownername)'"
+      $app.owner = $prop
     }
 
     $json = $app | ConvertTo-Json -Compress -Depth 10
