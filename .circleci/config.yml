@@ -13,7 +13,7 @@ jobs:
           command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1'
       - run:
           name: Check that the loaded module version matches the manifest
-          command: pwsh -Command 'if (Import-Module ./Qlik-Cli.psd1; (Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {Write-Error "Version does not match"}'
+          command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1; if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {Write-Error "Version does not match"}'
   deploy:
     docker:
       - image: microsoft/powershell:latest
