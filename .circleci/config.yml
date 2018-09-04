@@ -7,14 +7,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Start PowerShell
-          command: pwsh
-      - run:
           name: Check version has been incremented in manifest
-          command: (Test-ModuleManifest -Path /root/qlik-cli/Qlik-Cli.psd1).Version -gt (Find-Module Qlik-Cli).Version
+          command: pwsh -Command 'if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {Write-Error "Version must be newer"}'
       - run:
           name: Check that the modules can be imported
-          command: Import-Module ./Qlik-Cli.psd1
+          command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1'
       - run:
           name: Check that the loaded module version matches the manifest
-          command: (Test-ModuleManifest -Path /root/qlik-cli/Qlik-Cli.psd1).Version -eq (Get-Module qlik-cli).version
+          command: pwsh -Command 'if (Import-Module ./Qlik-Cli.psd1; (Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {Write-Error "Version does not match"}'
