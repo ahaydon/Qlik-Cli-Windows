@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: microsoft/powershell
+      - image: microsoft/powershell:latest
     steps:
       - checkout
       - run:
