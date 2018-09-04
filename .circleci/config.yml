@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: microsoft/powershell
+    steps:
+      - checkout
+      - run:
+          name: Check version has been incremented in manifest
+          command: (Test-ModuleManifest -Path /root/qlik-cli/Qlik-Cli.psd1).Version -gt (Find-Module Qlik-Cli).Version
+      - run:
+          name: Check that the modules can be imported
+          command: Import-Module ./Qlik-Cli.psd1
+      - run:
+          name: Check that the loaded module version matches the manifest
+          command: (Test-ModuleManifest -Path /root/qlik-cli/Qlik-Cli.psd1).Version -eq (Get-Module qlik-cli).version
