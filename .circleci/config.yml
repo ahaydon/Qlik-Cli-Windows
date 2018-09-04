@@ -3,6 +3,7 @@ jobs:
   build:
     docker:
       - image: microsoft/powershell:latest
+      - command: pwsh
     steps:
       - checkout
       - run:
