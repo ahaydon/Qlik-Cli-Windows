@@ -7,6 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Start PowerShell
+          command: pwsh
+      - run:
           name: Check version has been incremented in manifest
           command: (Test-ModuleManifest -Path /root/qlik-cli/Qlik-Cli.psd1).Version -gt (Find-Module Qlik-Cli).Version
       - run:
