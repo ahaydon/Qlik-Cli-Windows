@@ -21,8 +21,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install .Net Core
+          command: apt-get install aspnetcore-runtime-2.1
+      - run:
           name: Publish module to PowerShell Gallery
-          command: pwsh -Command 'Write-Host $env:PSG_API_KEY'
+          command: pwsh -Command 'Publish-Module -Path ./Qlik-Cli.psd1 -NuGetApiKey $env:PSG_API_KEY'
 workflows:
   version: 2
   test-and-deploy:
