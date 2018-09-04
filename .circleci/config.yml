@@ -1,9 +1,8 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
       - image: microsoft/powershell:latest
-        command: pwsh
     steps:
       - checkout
       - run:
@@ -15,3 +14,23 @@ jobs:
       - run:
           name: Check that the loaded module version matches the manifest
           command: pwsh -Command 'if (Import-Module ./Qlik-Cli.psd1; (Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {Write-Error "Version does not match"}'
+  deploy:
+    docker:
+      - image: microsoft/powershell:latest
+        command: pwsh
+    steps:
+      - checkout
+      - run:
+          name: Publish module to PowerShell Gallery
+          command: pwsh -Command 'Publish-Module -Name Qlik-Cli -NuGetApiKey <apiKey>'
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      - test
+      - deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
