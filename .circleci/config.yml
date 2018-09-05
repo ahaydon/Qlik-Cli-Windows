@@ -22,7 +22,7 @@ jobs:
       - checkout
       - run:
           name: Install .Net Core
-          command: apt-get update && apt-get install -y aspnetcore-runtime-2.1
+          command: apt-get update && apt-get install -y aspnetcore-runtime-2.1 git ssh-client
       - run:
           name: Publish module to PowerShell Gallery
           command: pwsh -Command 'pwd; ls; Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
