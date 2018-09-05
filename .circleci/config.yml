@@ -22,13 +22,13 @@ jobs:
       - checkout
       - run:
           name: Install .Net Core
-          command: apt-get update && apt-get install -y aspnetcore-runtime-2.1 git ssh-client
+          command: apt-get update && apt-get install -y aspnetcore-runtime-2.1
       - run:
           name: WORKAROUND to set directory name to module name
           command: cd .. && mv project qlik-cli && cd qlik-cli
       - run:
           name: Publish module to PowerShell Gallery
-          command: pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
+          command: pwsh -Command 'pwd; ls; Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
 workflows:
   version: 2
   test-and-deploy:
