@@ -22,18 +22,18 @@ jobs:
       - checkout
       - run:
           name: Install .Net Core
-          command: apt-get update && apt-get install -y aspnetcore-runtime-2.1
+          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
       - run:
           name: Publish module to PowerShell Gallery
-          command: cd .. && mv project qlik-cli && cd qlik-cli && pwsh -Command 'pwd; ls; Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
+          command: cd .. && mv project qlik-cli && cd qlik-cli && pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
 workflows:
   version: 2
   test-and-deploy:
     jobs:
-      - test
+      #- test
       - deploy:
-          requires:
-            - test
+          #requires:
+          #  - test
           filters:
             branches:
               only: circleci
