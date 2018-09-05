@@ -21,7 +21,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install .Net Core
+          name: Install .Net Core SDK
           command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
       - run:
           name: Publish module to PowerShell Gallery
@@ -30,10 +30,10 @@ workflows:
   version: 2
   test-and-deploy:
     jobs:
-      #- test
+      - test
       - deploy:
-          #requires:
-          #  - test
+          requires:
+           - test
           filters:
             branches:
-              only: circleci
+              only: master
