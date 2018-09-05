@@ -1,0 +1,39 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: microsoft/powershell:latest
+    steps:
+      - checkout
+      - run:
+          name: Check version has been incremented in manifest
+          command: pwsh -Command 'if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {Write-Error "Version must be newer"}'
+      - run:
+          name: Check that the modules can be imported
+          command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1'
+      - run:
+          name: Check that the loaded module version matches the manifest
+          command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1; if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {Write-Error "Version does not match"}'
+  deploy:
+    docker:
+      - image: microsoft/powershell:latest
+        command: pwsh
+    steps:
+      - checkout
+      - run:
+          name: Install .Net Core SDK
+          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
+      - run:
+          name: Publish module to PowerShell Gallery
+          command: cd .. && mv project qlik-cli && cd qlik-cli && pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      - test
+      - deploy:
+          requires:
+           - test
+          filters:
+            branches:
+              only: master
