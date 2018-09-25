@@ -115,99 +115,98 @@ function Get-QlikVirtualProxy {
 }
 
 function New-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0)]
-    [string]$prefix,
+    [CmdletBinding()]
+    param (
+      [parameter(Position=0)]
+      [string]$prefix,
+  
+      [parameter(Mandatory=$true,Position=1)]
+      [string]$description,
+  
+      [parameter(Mandatory=$true,Position=2)]
+      [alias("cookie")]
+      [string]$sessionCookieHeaderName,
+  
+      [alias("authUri")]
+      [string]$authenticationModuleRedirectUri,
+  
+      [alias("engine")]
+      [string[]]$loadBalancingServerNodes = "",
+  
+      [alias("wsorigin")]
+      [string[]]$websocketCrossOriginWhiteList = "",
+  
+      [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+      [String]$authenticationMethod="ticket",
+  
+      [String]$samlMetadataIdP="",
+  
+      [String]$samlHostUri="",
+  
+      [String]$samlEntityId="",
+  
+      [String]$samlAttributeUserId="",
+  
+      [String]$samlAttributeUserDirectory="",
 
-    [parameter(Mandatory=$true,Position=1)]
-    [string]$description,
+      [String]$headerAuthenticationMode="0",
 
-    [parameter(Mandatory=$true,Position=2)]
-    [alias("cookie")]
-    [string]$sessionCookieHeaderName,
+      [String]$headerAuthenticationHeaderName="",
 
-    [alias("authUri")]
-    [string]$authenticationModuleRedirectUri,
+      [String]$headerAuthenticationStaticUserDirectory="",
 
-    [alias("engine")]
-    [string[]]$loadBalancingServerNodes = "",
+      [String]$headerAuthenticationDynamicUserDirectory="",
 
-    [alias("wsorigin")]
-    [string[]]$websocketCrossOriginWhiteList = "",
-
-    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
-    [String]$authenticationMethod="ticket",
-
-    [String]$samlMetadataIdP="",
-
-    [String]$samlHostUri="",
-
-    [String]$samlEntityId="",
-
-    [String]$samlAttributeUserId="",
-
-    [String]$samlAttributeUserDirectory="",
-
-    [hashtable[]]$samlAttributeMap,
-
-    [switch]$samlSlo,
-
-    [ValidateSet("sha1","sha256")]
-    [String]$samlSigningAlgorithm="sha1",
-
-    [Int]$sessionInactivityTimeout = 30
-  )
-
-  PROCESS {
-    If( $loadBalancingServerNodes ) {
-      $engines = @(
-        $loadBalancingServerNodes | foreach {
-          If( $_ -match $script:guid ) {
-            @{ id = $_ }
-          } else {
-            $eid = Get-QlikNode -filter "hostname eq '$_'"
-            @{ id = $eid.id }
+      [int]$anonymousAccessMode="",
+  
+      [Int]$sessionInactivityTimeout = 30
+    )
+  
+    PROCESS {
+      If( $loadBalancingServerNodes ) {
+        $engines = @(
+          $loadBalancingServerNodes | foreach {
+            If( $_ -match $script:guid ) {
+              @{ id = $_ }
+            } else {
+              $eid = Get-QlikNode -filter "hostname eq '$_'"
+              @{ id = $eid.id }
+            }
           }
-        }
-      )
-    } else {
-      $engines = @()
+        )
+      } else {
+        $engines = @()
+      }
+      $authenticationMethodCode = switch ($authenticationMethod) {
+        "ticket"  { 0 }
+        "static"  { 1 }
+        "dynamic" { 2 }
+        "saml"    { 3 }
+        "jwt"     { 4 }
+      }
+  
+      $json = (@{
+        prefix=$prefix;
+        description=$description;
+        authenticationModuleRedirectUri=$authenticationModuleRedirectUri;
+        loadBalancingServerNodes=$engines;
+        sessionCookieHeaderName=$sessionCookieHeaderName;
+        websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
+        sessionInactivityTimeout=$sessionInactivityTimeout;
+        authenticationMethod=$authenticationMethodCode;
+        samlMetadataIdP=$samlMetadataIdP;
+        samlHostUri=$samlHostUri;
+        samlEntityId=$samlEntityId;
+        samlAttributeUserId=$samlAttributeUserId;
+        samlAttributeUserDirectory=$samlAttributeUserDirectory;
+        headerAuthenticationMode=$headerAuthenticationMode;
+        headerAuthenticationHeaderName=$headerAuthenticationHeaderName;
+        headerAuthenticationDynamicUserDirectory=$headerAuthenticationDynamicUserDirectory;
+      } | ConvertTo-Json -Compress -Depth 10)
+      echo $json
+      return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
     }
-    $authenticationMethodCode = switch ($authenticationMethod) {
-      "ticket"  { 0 }
-      "static"  { 1 }
-      "dynamic" { 2 }
-      "saml"    { 3 }
-      "jwt"     { 4 }
-    }
-    $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
-      "sha1"   { 0 }
-      "sha256" { 1 }
-    }
-
-    $json = (@{
-      prefix=$prefix;
-      description=$description;
-      authenticationModuleRedirectUri=$authenticationModuleRedirectUri;
-      loadBalancingServerNodes=$engines;
-      sessionCookieHeaderName=$sessionCookieHeaderName;
-      websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
-      sessionInactivityTimeout=$sessionInactivityTimeout;
-      authenticationMethod=$authenticationMethodCode;
-      samlMetadataIdP=$samlMetadataIdP;
-      samlHostUri=$samlHostUri;
-      samlEntityId=$samlEntityId;
-      samlAttributeUserId=$samlAttributeUserId;
-      samlAttributeUserDirectory=$samlAttributeUserDirectory;
-      samlAttributeMap=$samlAttributeMap;
-      samlSlo=$samlSlo.IsPresent;
-      samlAttributeSigningAlgorithm=$samlSigningAlgorithmCode;
-    } | ConvertTo-Json -Compress -Depth 10)
-
-    return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
   }
-}
 
 function Remove-QlikVirtualProxy {
   [CmdletBinding()]
