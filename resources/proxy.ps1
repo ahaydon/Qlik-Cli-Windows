@@ -220,18 +220,6 @@ function Remove-QlikVirtualProxy {
   }
 }
 
-function Remove-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
-    [string]$id
-  )
-
-  PROCESS {
-    return Invoke-QlikDelete "/qrs/virtualproxyconfig/$id"
-  }
-}
-
 function Update-QlikProxy {
   [CmdletBinding()]
   param (
