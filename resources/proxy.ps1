@@ -149,7 +149,7 @@ function New-QlikVirtualProxy {
 
     [String]$samlAttributeUserDirectory="",
 
-    [hashtable[]]$samlAttributeMap,
+    [hashtable[]]$samlAttributeMap = @(),
 
     [switch]$samlSlo,
 
