@@ -1,3 +1,5 @@
+Add-Type -AssemblyName System.Web
+
 function Connect-Qlik {
 <#
 .SYNOPSIS

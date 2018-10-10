@@ -25,6 +25,7 @@ function New-QlikNode {
     [parameter(Mandatory=$true,Position=0)]
     [string]$hostname,
     [string]$name = $hostname,
+    [ValidateSet("Production", "Development", "Both", "ProductionAndDevelopment")]
     [string]$nodePurpose,
     [string[]]$customProperties,
     [string[]]$tags,
@@ -71,6 +72,7 @@ function New-QlikNode {
         $conf.configuration.nodePurpose = switch($nodePurpose) {
             Production { 0 }
             Development { 1 }
+            ProductionAndDevelopment { 2 }
             Both { 2 }
         }
     }
@@ -111,8 +113,10 @@ function Register-QlikNode {
     If( !$psBoundParameters.ContainsKey("hostname") ) { $psBoundParameters.Add( "hostname", $hostname ) }
     If( !$psBoundParameters.ContainsKey("name") ) { $psBoundParameters.Add( "name", $name ) }
     $password = New-QlikNode @psBoundParameters
-    $postParams = @{__pwd="$password"}
-    Invoke-WebRequest -Uri "http://localhost:4570/certificateSetup" -Method Post -Body $postParams -UseBasicParsing > $null
+    if ($password) {
+      $postParams = @{__pwd="$password"}
+      Invoke-WebRequest -Uri "http://localhost:4570/certificateSetup" -Method Post -Body $postParams -UseBasicParsing > $null
+    }
   }
 }
 
@@ -135,7 +139,7 @@ function Update-QlikNode {
     [string]$id,
 
     [string]$name,
-    [ValidateSet("Production", "Development", "Both")]
+    [ValidateSet("Production", "Development", "Both", "ProductionAndDevelopment")]
     [string]$nodePurpose,
     [string[]]$customProperties,
     [string[]]$tags,
@@ -153,6 +157,7 @@ function Update-QlikNode {
         switch($nodePurpose) {
             Production { $node.nodePurpose = 0 }
             Development { $node.nodePurpose = 1 }
+            ProductionAndDevelopment { $node.nodePurpose = 2 }
             Both { $node.nodePurpose = 2 }
         }
     }

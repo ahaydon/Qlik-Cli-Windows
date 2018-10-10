@@ -119,6 +119,7 @@ function Publish-QlikApp {
 
     If( $name )
     {
+      $name = [System.Web.HttpUtility]::UrlEncode($name)
       $path += "&name=$name"
     }
 
@@ -229,7 +230,7 @@ function Update-QlikApp {
       )
       $app.tags = $prop
     }
-    
+
     If( $ownername ) {
       $prop = Get-QlikUser -filter "name eq '$($ownername)'"
       $app.owner = $prop

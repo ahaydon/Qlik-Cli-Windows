@@ -1,7 +1,7 @@
 ## About
 Qlik-Cli is a PowerShell module that provides a command line interface for managing a Qlik Sense environment. The module provides a set of commands for viewing and editing configuration settings, as well as managing tasks and other features available through the APIs.
 
-[![CircleCI](https://circleci.com/gh/ahaydon/Qlik-Cli/tree/circleci.svg?style=svg)](https://circleci.com/gh/ahaydon/Qlik-Cli/tree/circleci)
+[![CircleCI](https://circleci.com/gh/ahaydon/Qlik-Cli.svg?style=svg)](https://circleci.com/gh/ahaydon/Qlik-Cli) Publish to PowerShell Gallery
 
 The desired state configuration module has now been moved to https://github.com/ahaydon/Qlik-DSC
 ## Usage
