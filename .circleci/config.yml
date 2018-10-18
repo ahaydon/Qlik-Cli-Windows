@@ -54,15 +54,17 @@ jobs:
 
               New-Item `
                 -ItemType Directory `
-                -Path /output/artifacts
+                -Path /output/workspace
 
-              Copy-Item ./Qlik-Cli-Merged.psm1 /tmp/artifacts/Qlik-Cli.psm1
+              Copy-Item ./Qlik-Cli-Merged.psm1 /output/workspace/Qlik-Cli.psm1
               (Get-Module Qlik-Cli).Version.ToString() |
-                Out-File /output/artifacts/version -Encoding utf8'
+                Out-File /output/workspace/version -Encoding utf8'
       - store_test_results:
           path: /output/test-results/
-      - store_artifacts:
-          path: /output/artifacts/
+      - persist_to_workspace:
+          root: /output/workspace/
+          paths:
+            - ./*
 
   publish-powershell-gallery:
     docker:
@@ -100,11 +102,11 @@ jobs:
       - image: cibuilds/github:latest
     steps:
       - attach_workspace:
-          at: /output/artifacts
+          at: /output/workspace
       - run:
           name: Publish release on GitHub
           command: |
-            VERSION=$(cat /output/artifacts/version)
+            VERSION=$(cat /output/workspace/version)
             echo $VERSION
             ghr -t ${GITHUB_TOKEN} \
                 -u ${CIRCLE_PROJECT_USERNAME} \
@@ -112,7 +114,7 @@ jobs:
                 -c ${CIRCLE_SHA1} \
                 -delete \
                 ${VERSION} \
-                /output/artifacts/
+                /output/workspace/Qlik-Cli.psm1
 
 workflows:
   version: 2
