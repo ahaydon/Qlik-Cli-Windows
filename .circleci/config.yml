@@ -6,14 +6,29 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Check version has been incremented in manifest
-          command: pwsh -Command 'if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {Write-Error "Version must be newer"}'
+          name: Install Pester module
+          command: pwsh -Command 'Install-Module Pester -Force'
       - run:
           name: Check that the modules can be imported
           command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1'
       - run:
+          name: Check version has been incremented in manifest
+          command: |
+            pwsh -Command '
+              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {
+                Write-Error "Version must be newer"
+              }'
+      - run:
           name: Check that the loaded module version matches the manifest
-          command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1; if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {Write-Error "Version does not match"}'
+          command: |
+            pwsh -Command '
+              Import-Module ./Qlik-Cli.psd1;
+              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {
+                Write-Error "Version does not match"
+              }'
+      - run:
+          name: Run Pester tests
+          command: pwsh -Command 'Invoke-Pester -EnableExit'
   deploy:
     docker:
       - image: microsoft/powershell:latest
@@ -25,7 +40,18 @@ jobs:
           command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
       - run:
           name: Publish module to PowerShell Gallery
-          command: cd .. && mv project qlik-cli && cd qlik-cli && pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
+          command: |
+            cd ..
+            mv project qlik-cli
+            cd qlik-cli
+            pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
+      - run:
+          name: Check published version matches module version
+          command: |
+            pwsh -Command '
+              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Find-Module -Name Qlik-Cli).Version) {
+                Write-Error "Published version does not match"
+              }'
 workflows:
   version: 2
   test-and-deploy:

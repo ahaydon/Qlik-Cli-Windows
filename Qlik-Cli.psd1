@@ -12,7 +12,7 @@
 RootModule = 'Qlik-Cli.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.13'
+ModuleVersion = '1.13.1'
 
 # ID used to uniquely identify this module
 GUID = '730275fa-35db-42e2-9400-eac7e3043ea4'
@@ -63,7 +63,7 @@ PowerShellVersion = '4.0'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @('resources\about.ps1', 'resources\app.ps1', 'resources\certificate.ps1', 'resources\content.ps1', 'resources\customproperty.ps1', 'resources\dataconnection.ps1', 'resources\engine.ps1', 'resources\extension.ps1', 'resources\node.ps1', 'resources\license.ps1', 'resources\object.ps1', 'resources\proxy.ps1', 'resources\rule.ps1', 'resources\scheduler.ps1', 'resources\servicecluster.ps1', 'resources\session.ps1', 'resources\stream.ps1', 'resources\table.ps1', 'resources\tag.ps1', 'resources\task.ps1', 'resources\user.ps1', 'resources\userdirectory.ps1', 'functions\core.ps1', 'functions\helper.ps1', 'functions\util.ps1')
+NestedModules = @('resources\about.ps1', 'resources\app.ps1', 'resources\certificate.ps1', 'resources\content.ps1', 'resources\customproperty.ps1', 'resources\dataconnection.ps1', 'resources\engine.ps1', 'resources\extension.ps1', 'resources\node.ps1', 'resources\license.ps1', 'resources\object.ps1', 'resources\proxy.ps1', 'resources\rule.ps1', 'resources\scheduler.ps1', 'resources\servicecluster.ps1', 'resources\servicestatus.ps1', 'resources\session.ps1', 'resources\stream.ps1', 'resources\table.ps1', 'resources\tag.ps1', 'resources\task.ps1', 'resources\user.ps1', 'resources\userdirectory.ps1', 'functions\core.ps1', 'functions\helper.ps1', 'functions\util.ps1')
 
 # Functions to export from this module
 FunctionsToExport = '*'
