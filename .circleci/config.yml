@@ -30,6 +30,8 @@ jobs:
               Invoke-Pester `
                 -EnableExit `
                 -OutputFile /output/test-results/pester/results.xml'
+      - store_test_results:
+          path: /output/test-results/
       - run:
           name: Concatenate scripts into single module file
           command: |
@@ -59,8 +61,6 @@ jobs:
               Copy-Item ./Qlik-Cli-Merged.psm1 /output/workspace/Qlik-Cli.psm1
               (Get-Module Qlik-Cli).Version.ToString() |
                 Out-File /output/workspace/version -Encoding utf8'
-      - store_test_results:
-          path: /output/test-results/
       - persist_to_workspace:
           root: /output/workspace/
           paths:
@@ -107,12 +107,10 @@ jobs:
           name: Publish release on GitHub
           command: |
             VERSION=$(cat /output/workspace/version)
-            echo $VERSION
             ghr -t ${GITHUB_TOKEN} \
                 -u ${CIRCLE_PROJECT_USERNAME} \
                 -r ${CIRCLE_PROJECT_REPONAME} \
                 -c ${CIRCLE_SHA1} \
-                -delete \
                 ${VERSION} \
                 /output/workspace/Qlik-Cli.psm1
 
@@ -130,3 +128,6 @@ workflows:
       - publish-github-release:
           requires:
             - test
+          filters:
+            branches:
+              only: master
