@@ -25,11 +25,11 @@ jobs:
             pwsh -Command '
               New-Item `
                 -ItemType Directory `
-                -Path /tmp/test-results
+                -Path /output/test-results/pester
 
               Invoke-Pester `
                 -EnableExit `
-                -OutputFile /tmp/test-results/pester.xml'
+                -OutputFile /output/test-results/pester/results.xml'
       - run:
           name: Concatenate scripts into single module file
           command: |
@@ -48,15 +48,22 @@ jobs:
               Import-Module ./Qlik-Cli-Merged.psm1 -Force
               $MergedCount = (Get-Command -Module Qlik-Cli-Merged).Count
               if ($SplitCount -ne $MergedCount) {
-                Write-Error "Merged module contains wrong number of commands, has $MergedCount and should have $SplitCount"
+                Write-Error ("Merged module contains wrong number of commands," `
+                           + " has $MergedCount and should have $SplitCount")
               }
-              mkdir /tmp/artifacts
+
+              New-Item `
+                -ItemType Directory `
+                -Path /output/artifacts
+
               Copy-Item ./Qlik-Cli-Merged.psm1 /tmp/artifacts/Qlik-Cli.psm1
-              (Get-Module Qlik-Cli).Version.ToString() | Out-File /tmp/artifacts/version -Encoding utf8'
+              (Get-Module Qlik-Cli).Version.ToString() |
+                Out-File /output/artifacts/version -Encoding utf8'
       - store_test_results:
-          path: /tmp/test-results/
+          path: /output/test-results/
       - store_artifacts:
-          path: /tmp/artifacts/
+          path: /output/artifacts/
+
   publish-powershell-gallery:
     docker:
       - image: microsoft/powershell:latest
@@ -87,18 +94,26 @@ jobs:
               if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Find-Module -Name Qlik-Cli).Version) {
                 Write-Error "Published version does not match"
               }'
+
   publish-github-release:
     docker:
-      - image: cibuilds/github:0.10
+      - image: cibuilds/github:latest
     steps:
       - attach_workspace:
-          at: ./artifacts
+          at: /output/artifacts
       - run:
           name: Publish release on GitHub
           command: |
-            VERSION=$(cat ./artifacts/version)
+            VERSION=$(cat /output/artifacts/version)
             echo $VERSION
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
+            ghr -t ${GITHUB_TOKEN} \
+                -u ${CIRCLE_PROJECT_USERNAME} \
+                -r ${CIRCLE_PROJECT_REPONAME} \
+                -c ${CIRCLE_SHA1} \
+                -delete \
+                ${VERSION} \
+                /output/artifacts/
+
 workflows:
   version: 2
   test-and-deploy:
