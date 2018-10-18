@@ -106,8 +106,10 @@ workflows:
       - test
       - publish-powershell-gallery:
           requires:
-           - test
+            - test
           filters:
             branches:
               only: master
-      - publish-github-release
+      - publish-github-release:
+          requires:
+            - test
