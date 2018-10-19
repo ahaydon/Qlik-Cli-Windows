@@ -29,7 +29,16 @@ jobs:
 
               Invoke-Pester `
                 -EnableExit `
-                -OutputFile /output/test-results/pester/results.xml'
+                -OutputFile /output/test-results/pester/nunit-results.xml'
+      - run:
+          name: Convert NUnit results to JUnit
+          command: |
+            pwsh -Command '
+              $xml = "/output/test-results/pester/nunit-results.xml"
+              $xslt = New-Object System.Xml.Xsl.XslCompiledTransform
+              $xslt.Load("https://raw.githubusercontent.com/nunit/nunit-transforms/master/nunit3-junit/nunit3-junit.xslt");
+              $xslt.Transform($xml, "/output/test-results/pester/results.xml");
+            '
       - store_test_results:
           path: /output/test-results/
       - run:
