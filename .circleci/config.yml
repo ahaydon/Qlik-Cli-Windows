@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: microsoft/powershell:latest
+      - image: microsoft/powershell:ubuntu-16.04
     steps:
       - checkout
       - run:
@@ -71,7 +71,7 @@ jobs:
 
   publish-powershell-gallery:
     docker:
-      - image: microsoft/powershell:latest
+      - image: microsoft/powershell:ubuntu-16.04
         command: pwsh
     steps:
       - checkout
