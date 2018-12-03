@@ -100,7 +100,6 @@ function Update-QlikDataConnection {
   param (
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
-
     [string]$ConnectionString,
     [PSCredential]$Credential,
     [string[]]$customProperties,
@@ -109,10 +108,16 @@ function Update-QlikDataConnection {
 
   PROCESS {
     $qdc = Get-QlikDataConnection -raw $id
+	If ($PSBoundParameters.ContainsKey("ConnectionString")){
     $qdc.connectionstring = $ConnectionString
+	}
     if( $Credential ) {
       $qdc.username = $Credential.GetNetworkCredential().Username
-      $qdc.password = $Credential.GetNetworkCredential().Password
+	  if($qdc.psobject.Properties.name -contains "password"){
+	    $qdc.password = $Credential.GetNetworkCredential().Password
+      }else{
+        $qdc| Add-Member -MemberType NoteProperty -Name "password" -Value $($Cred.GetNetworkCredential().Password)
+      }
     }
     if( $customProperties ) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
     if( $tags ) { $qdc.tags = @(GetTags $tags) }
