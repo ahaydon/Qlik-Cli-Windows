@@ -26,7 +26,6 @@ function New-QlikUserDirectory {
     [parameter(Mandatory=$false,Position=1)]
     [string]$userDirectoryName,
 
-    [ValidateSet('Repository.UserDirectoryConnectors.ODBC.OdbcSql', 'Repository.UserDirectoryConnectors.LDAP.ActiveDirectory')]
     [string]$type,
 
     [string]$configured=$false,

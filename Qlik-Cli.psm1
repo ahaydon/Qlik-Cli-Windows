@@ -87,7 +87,7 @@ function Connect-Qlik {
       if (Test-Path $HostPath) {
         $Computername = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($(Get-Content $HostPath)))
       } else {
-        $Computername = $env:computername + $port
+        $Computername = $env:computername
       }
     }
     If( $Computername.ToLower().StartsWith( "http" ) ) {

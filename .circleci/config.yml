@@ -92,13 +92,6 @@ jobs:
             mv project qlik-cli
             cd qlik-cli
             pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
-      - run:
-          name: Check published version matches module version
-          command: |
-            pwsh -Command '
-              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Find-Module -Name Qlik-Cli).Version) {
-                Write-Error "Published version does not match"
-              }'
 
   publish-github-release:
     docker:
