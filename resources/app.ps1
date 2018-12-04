@@ -24,19 +24,21 @@ function Export-QlikApp {
     [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
     [string]$id,
     [parameter(ValueFromPipelinebyPropertyName=$True,Position=1)]
-    [string]$filename
+		[string]$filename,
+		[switch]$SkipData
   )
 
   PROCESS {
-    Write-Verbose filename=$filename
+	  if ($PSBoundParameters.ContainsKey("Skipdata")){$SkipFilter = "?skipdata=$($SkipData.IsPresent)"}else{$SkipFilter = ""}
+	  Write-Verbose filename=$filename
     If( [string]::IsNullOrEmpty($filename) ) {
       $file = "$id.qvf"
     } else {
       $file = $filename
     }
     Write-Verbose file=$file
-    $guid = [guid]::NewGuid()
-    $app = Invoke-QlikPost /qrs/app/$id/export/$($guid)
+	  $guid = [guid]::NewGuid()
+	  $app = Invoke-QlikPost /qrs/app/$id/export/$($guid)$SkipFilter
     Invoke-QlikDownload -path "$($app.downloadPath)" $file
     Write-Verbose "Downloaded $id to $file"
   }
