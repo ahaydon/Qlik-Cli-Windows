@@ -13,9 +13,13 @@ RootModule = 'Qlik-Cli.psm1'
 
 # Version number of this module.
 <<<<<<< HEAD
+<<<<<<< HEAD
 ModuleVersion = '1.13.1'
 =======
 ModuleVersion = '1.13.2'
+>>>>>>> origin/master
+=======
+ModuleVersion = '1.13.3'
 >>>>>>> origin/master
 
 # ID used to uniquely identify this module
