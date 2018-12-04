@@ -12,7 +12,7 @@
 RootModule = 'Qlik-Cli.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.13.2'
+ModuleVersion = '1.13.3'
 
 # ID used to uniquely identify this module
 GUID = '730275fa-35db-42e2-9400-eac7e3043ea4'
