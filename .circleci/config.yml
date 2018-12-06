@@ -69,6 +69,53 @@ jobs:
           paths:
             - ./*
 
+  pre-release-checks:
+    docker:
+      - image: microsoft/powershell:ubuntu-16.04
+        command: pwsh
+    steps:
+      - checkout
+      - run:
+          name: Check module version is newer than latest published to PowerShell Gallery
+          command: |
+            pwsh -Command '
+              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {
+                Write-Error "Module version already exists"
+              }'
+      - run:
+          name: Check module version is newer than latest published to GitHub releases
+          command: |
+            pwsh -Command '
+              $password = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
+              $credential = New-Object System.Management.Automation.PSCredential("ahaydon", $password)
+              $release = Invoke-RestMethod `
+                -Method Get `
+                -Uri "https://api.github.com/repos/ahaydon/qlik-cli/releases/latest" `
+                -Credential $credential
+
+              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le [System.Version]$release.tag_name) {
+                Write-Error "Module version must be newer than last published version" -ErrorAction Stop
+              }
+
+              $version = (Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version
+              $release = $null
+              $null = try {
+                $release = Invoke-RestMethod `
+                  -Method Get `
+                  -Uri "https://api.github.com/repos/ahaydon/qlik-cli/releases/tags/$version" `
+                  -Credential $credential `
+                  -ErrorAction SilentlyContinue
+              } catch [System.Net.Http.HttpRequestException] {
+                if ($_.Exception.Response.StatusCode -ne "NotFound") {
+                  Throw $_
+                }
+                $Error | Out-Null #clear the error so we exit cleanly
+              }
+
+              if ($release) {
+                Write-Error "Module version already exists" -ErrorAction Stop
+              }'
+
   publish-powershell-gallery:
     docker:
       - image: microsoft/powershell:ubuntu-16.04
@@ -115,6 +162,12 @@ workflows:
   test-and-deploy:
     jobs:
       - test
+      - pre-release-checks:
+          requires:
+            - test
+          filters:
+            branches:
+              only: testing
       - publish-powershell-gallery:
           requires:
             - test
