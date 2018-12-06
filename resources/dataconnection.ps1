@@ -116,7 +116,7 @@ function Update-QlikDataConnection {
 	  if($qdc.psobject.Properties.name -contains "password"){
 	    $qdc.password = $Credential.GetNetworkCredential().Password
       }else{
-        $qdc| Add-Member -MemberType NoteProperty -Name "password" -Value $($Cred.GetNetworkCredential().Password)
+        $qdc| Add-Member -MemberType NoteProperty -Name "password" -Value $($Credential.GetNetworkCredential().Password)
       }
     }
     if( $customProperties ) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
