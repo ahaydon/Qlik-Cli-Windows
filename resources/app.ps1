@@ -221,7 +221,7 @@ function Update-QlikApp {
       $app.customProperties = $prop
     }
 
-    If( $tags ) {
+    If( $PSBoundParameters.ContainsKey("tags") ) {
       $prop = @(
         $tags | Where-Object {$_} | ForEach-Object {
           $p = Get-QlikTag -filter "name eq '$_'"
