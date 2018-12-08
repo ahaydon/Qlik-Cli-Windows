@@ -59,7 +59,7 @@ function New-QlikRule {
 						}
 						else
 						{
-							Write-Host "Requested Tag $($_) Not Found. Please Add before trying to use"
+							Write-Warning "Requested Tag $($_) Not Found. Please Add before trying to use"
 						}
 					}
 				)
