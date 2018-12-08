@@ -19,6 +19,8 @@ function Get-QlikDataConnection {
 
 function New-QlikDataConnection {
   [CmdletBinding()]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "password", Justification="Deprecation warning")]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", Justification="Deprecation warning")]
   param (
     [parameter(Position=0)]
     [string]$name,
