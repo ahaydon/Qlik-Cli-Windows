@@ -4,7 +4,6 @@ Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 
 Describe "Update-QlikRule" {
   Mock Invoke-QlikPut -Verifiable {
-    Write-Host $body
     return ConvertFrom-Json $body
   }
 
@@ -31,7 +30,6 @@ Describe "Update-QlikRule" {
         -id 'e46cc4b4-b248-401a-a2fe-b3170532cc00' `
         -Disabled
 
-      Write-Host $rule.disabled
       $rule.disabled | Should BeOfType boolean
       $rule.disabled | Should BeTrue
 
@@ -44,7 +42,7 @@ Describe "Update-QlikRule" {
         -Disabled:$false
 
       $rule.disabled | Should BeOfType boolean
-      $rule.disabled | Should Be $false
+      $rule.disabled | Should BeFalse
 
       Assert-VerifiableMock
     }
@@ -54,7 +52,7 @@ Describe "Update-QlikRule" {
         -id 'e46cc4b4-b248-401a-a2fe-b3170532cc00'
 
       $rule.disabled | Should BeOfType boolean
-      $rule.disabled | Should Be $false
+      $rule.disabled | Should BeFalse
 
       Assert-VerifiableMock
     }
