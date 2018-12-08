@@ -4,7 +4,7 @@ if( $qlik_output_raw ) { $rawOutput = $true }
 
 function CallRestUri($method, $path, $extraParams) {
   Write-Verbose "Raw output: $rawOutput"
-  If( $Script:prefix -eq $null ) { Connect-Qlik > $null }
+  If( $null -eq $Script:prefix ) { Connect-Qlik > $null }
   If( ! $path.StartsWith( "http" ) ) {
     $path = $Script:prefix + $path
   }
@@ -25,7 +25,7 @@ function CallRestUri($method, $path, $extraParams) {
   If( $params.Body ) { Write-Verbose $params.Body }
 
   Write-Verbose "Calling $method for $path"
-  If( $script:webSession -eq $null ) {
+  If( $null -eq $script:webSession ) {
     $result = Invoke-RestMethod -Method $method -Uri $path @params -SessionVariable webSession
     $script:webSession = $webSession
   } else {
