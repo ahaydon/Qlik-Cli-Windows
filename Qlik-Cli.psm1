@@ -250,5 +250,3 @@ function Update-QlikOdag {
       return Invoke-QlikPut "/qrs/odagservice/$id" $json
       }
 }
-
-Export-ModuleMember -Function Add-Qlik*, Connect-Qlik, Copy-Qlik*, Export-Qlik*, Get-Qlik*, Import-Qlik*, Invoke-Qlik*, New-Qlik*, Publish-Qlik*, Register-Qlik*, Remove-Qlik*, Restore-Qlik*, Select-Qlik*, Set-Qlik*, Start-Qlik*, Switch-Qlik*, Sync-QlikUserDirectory, Unpublish-Qlik*, Update-Qlik*, Wait-Qlik* -Alias *

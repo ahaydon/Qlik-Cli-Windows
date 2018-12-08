@@ -17,9 +17,12 @@ Invoke-Pester `
 
 $mod = Import-LocalizedData -FileName Qlik-Cli.psd1 -BaseDirectory ./
 Pop-Location
-$mod.NestedModules + $mod.RootModule |
-  %{Get-Content -raw $_} |
-  Out-File ./Qlik-Cli-Merged.psm1 -Encoding utf8
+$content = $mod.NestedModules + $mod.RootModule |
+  ForEach-Object {Get-Content -raw $_}
+$content += "`nExport-ModuleMember -Function " +
+  ($mod.FunctionsToExport -join ', ') +
+  ' -Alias ' + ($mod.AliasesToExport -join ', ')
+$content | Out-File ./Qlik-Cli-Merged.psm1 -Encoding utf8
 
 Import-Module ./Qlik-Cli.psd1 -Force
 $SplitCount = (Get-Command -Module Qlik-Cli).Count

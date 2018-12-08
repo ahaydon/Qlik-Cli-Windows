@@ -66,7 +66,7 @@ PowerShellVersion = '4.0'
 NestedModules = @('resources\about.ps1', 'resources\app.ps1', 'resources\certificate.ps1', 'resources\content.ps1', 'resources\customproperty.ps1', 'resources\dataconnection.ps1', 'resources\engine.ps1', 'resources\extension.ps1', 'resources\node.ps1', 'resources\license.ps1', 'resources\object.ps1', 'resources\proxy.ps1', 'resources\rule.ps1', 'resources\scheduler.ps1', 'resources\servicecluster.ps1', 'resources\servicestatus.ps1', 'resources\session.ps1', 'resources\stream.ps1', 'resources\table.ps1', 'resources\tag.ps1', 'resources\task.ps1', 'resources\user.ps1', 'resources\userdirectory.ps1', 'functions\core.ps1', 'functions\helper.ps1', 'functions\util.ps1')
 
 # Functions to export from this module
-FunctionsToExport = '*'
+FunctionsToExport = 'Add-Qlik*', 'Connect-Qlik', 'Copy-Qlik*', 'Export-Qlik*', 'Get-Qlik*', 'Import-Qlik*', 'Invoke-Qlik*', 'New-Qlik*', 'Publish-Qlik*', 'Register-Qlik*', 'Remove-Qlik*', 'Restore-Qlik*', 'Select-Qlik*', 'Set-Qlik*', 'Start-Qlik*', 'Switch-Qlik*', 'Sync-QlikUserDirectory', 'Unpublish-Qlik*', 'Update-Qlik*', 'Wait-Qlik*'
 
 # Cmdlets to export from this module
 CmdletsToExport = ''
@@ -75,7 +75,7 @@ CmdletsToExport = ''
 VariablesToExport = ''
 
 # Aliases to export from this module
-AliasesToExport = '*'
+AliasesToExport = 'Qonnect', 'Get-QlikLoginAccess'
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()
