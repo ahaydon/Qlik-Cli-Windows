@@ -12,7 +12,7 @@ function Add-QlikTrigger {
   PROCESS {
     If( $tags ) {
       $tagArray = @(
-        $tags | foreach {
+        $tags | ForEach-Object {
           $p = Get-QlikTag -filter "name eq '$_'"
           @{
             id = $p.id
@@ -60,7 +60,7 @@ function Add-QlikTrigger {
       			  hours = 0;
       			  days = 0;
             };
-            compositeRules=@($OnSuccess | foreach {
+            compositeRules=@($OnSuccess | ForEach-Object {
               @{
                 ruleState=1;
 
@@ -117,12 +117,12 @@ function Get-QlikTask {
       $path += "/full"
       $result = Invoke-QlikGet $path $filter
       If( !$full ) {
-        $result = $result | foreach {
+        $result = $result | ForEach-Object {
           $props = @{
             name = $_.name
-            status = $_ | select -ExpandProperty operational | select -ExpandProperty lastExecutionResult | select -ExpandProperty status
-            lastExecution = $_ | select -ExpandProperty operational | select -ExpandProperty lastExecutionResult | select -ExpandProperty startTime
-            nextExecution = $_ | select -ExpandProperty operational | select -ExpandProperty nextExecution
+            status = $_ | Select-Object -ExpandProperty operational | Select-Object -ExpandProperty lastExecutionResult | Select-Object -ExpandProperty status
+            lastExecution = $_ | Select-Object -ExpandProperty operational | Select-Object -ExpandProperty lastExecutionResult | Select-Object -ExpandProperty startTime
+            nextExecution = $_ | Select-Object -ExpandProperty operational | Select-Object -ExpandProperty nextExecution
           }
           New-Object -TypeName PSObject -Prop $props
         }
@@ -151,7 +151,7 @@ function New-QlikTask {
   PROCESS {
     If( $tags ) {
       $tagArray = @(
-        $tags | foreach {
+        $tags | ForEach-Object {
           $p = Get-QlikTag -filter "name eq '$_'" -raw
           @{
             id = $p.id
@@ -293,7 +293,7 @@ function Wait-QlikExecution {
         $taskstatuscode = $result.status
 
         $result = FormatOutput($result)
-        Write-Progress -Activity $taskName -Status $result.status -CurrentOperation ($result.details | select -Last 1).message
+        Write-Progress -Activity $taskName -Status $result.status -CurrentOperation ($result.details | Select-Object -Last 1).message
 
         # Wait for 1 second, in a Production setting this should be set much higher to avoid stressing the QRS API
         Start-Sleep -Seconds 1

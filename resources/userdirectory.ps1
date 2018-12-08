@@ -112,22 +112,22 @@ function Update-QlikUserDirectory {
       $ud.name = $name
     }
     if($path) {
-      ($ud.settings | ? name -eq path).value = $path
+      ($ud.settings | Where-Object name -eq path).value = $path
     }
     if($username) {
-      ($ud.settings | ? name -eq 'User name').value = $username
+      ($ud.settings | Where-Object name -eq 'User name').value = $username
     }
     if($password) {
-      ($ud.settings | ? name -eq password).value = $password
+      ($ud.settings | Where-Object name -eq password).value = $password
     }
     if($ldapFilter) {
-      ($ud.settings | ? name -eq 'LDAP Filter').value = $ldapFilter
+      ($ud.settings | Where-Object name -eq 'LDAP Filter').value = $ldapFilter
     }
     if($timeout) {
-      ($ud.settings | ? name -eq 'Synchronization timeout in seconds').value = $timeout
+      ($ud.settings | Where-Object name -eq 'Synchronization timeout in seconds').value = $timeout
     }
     if($pageSize) {
-      ($ud.settings | ? name -eq 'Page size').value = $pageSize
+      ($ud.settings | Where-Object name -eq 'Page size').value = $pageSize
     }
     $json = $ud | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/userdirectory/$id" -Body $json

@@ -55,7 +55,7 @@ function New-QlikDataConnection {
 
     If( $customProperties ) {
       $prop = @(
-        $customProperties | foreach {
+        $customProperties | ForEach-Object {
           $val = $_ -Split "="
           $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
           @{
@@ -69,7 +69,7 @@ function New-QlikDataConnection {
 
     If( $tags ) {
       $prop = @(
-        $tags | foreach {
+        $tags | ForEach-Object {
           $p = Get-QlikTag -filter "name eq '$_'"
           @{
             id = $p.id

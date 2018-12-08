@@ -42,7 +42,7 @@ function CallRestUri($method, $path, $extraParams) {
 
 function DeepCopy($data) {
   $copy=@{}
-  $data.Keys | % {
+  $data.Keys | ForEach-Object {
     $copy.Add($_, $(
       if($data.$_.GetType().Name -eq 'HashTable') {
         DeepCopy($data.$_)

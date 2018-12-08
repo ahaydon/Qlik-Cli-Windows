@@ -110,7 +110,7 @@ function Import-QlikObject {
   )
 
   PROCESS {
-    $object | foreach {
+    $object | ForEach-Object {
       $path = "/qrs/{0}" -F $_.schemaPath
       $json = $_ | ConvertTo-Json -Compress -Depth 10
       Invoke-QlikPost $path $json

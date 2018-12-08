@@ -163,7 +163,7 @@ function Update-QlikNode {
     }
     If( $customProperties ) {
       $prop = @(
-        $customProperties | foreach {
+        $customProperties | ForEach-Object {
           $val = $_ -Split "="
           $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
           @{

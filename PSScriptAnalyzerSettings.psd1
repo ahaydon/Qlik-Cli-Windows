@@ -1,5 +1,5 @@
 @{
-  Severity = @('Error')
+  Severity = @('Error', 'Warning')
   <#IncludeRules=@(
     'PSAvoidUsingPlainTextForPassword',
     'PSAvoidUsingConvertToSecureStringWithPlainText'
