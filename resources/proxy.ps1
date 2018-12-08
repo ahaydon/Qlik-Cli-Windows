@@ -136,7 +136,7 @@ function New-QlikVirtualProxy {
     [alias("wsorigin")]
     [string[]]$websocketCrossOriginWhiteList = "",
 
-    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+    [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
     [String]$authenticationMethod="ticket",
 
     [String]$samlMetadataIdP="",
@@ -180,6 +180,7 @@ function New-QlikVirtualProxy {
       "dynamic" { 2 }
       "saml"    { 3 }
       "jwt"     { 4 }
+      default   { $authenticationMethod }
     }
     $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
       "sha1"   { 0 }
@@ -351,7 +352,7 @@ function Update-QlikVirtualProxy {
 
     [String]$magicLinkFriendlyName,
 
-    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+    [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
     [String]$authenticationMethod,
 
     [String]$samlMetadataIdP,
@@ -409,6 +410,7 @@ function Update-QlikVirtualProxy {
           "dynamic" { 2 }
           "saml"    { 3 }
           "jwt"     { 4 }
+          default   { $authenticationMethod }
         }
     }
     If( $psBoundParameters.ContainsKey("samlMetadataIdP") ) {$proxy.samlMetadataIdP = $samlMetadataIdP }
