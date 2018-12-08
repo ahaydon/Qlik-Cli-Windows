@@ -86,7 +86,7 @@ function New-QlikNode {
 function Register-QlikNode {
   [CmdletBinding()]
   param (
-    [parameter(Mandatory=$true,Position=0)]
+    [parameter(Position=0)]
     [string]$hostname = $($env:computername),
     [string]$name = $hostname,
     [string]$nodePurpose,
