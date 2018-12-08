@@ -7,9 +7,7 @@ function FetchCertificate($storeName, $storeLocation) {
     $certs = $store.Certificates.Find("FindBySubjectDistinguishedName", $certFindValue, $false)
   }
   catch {
-    Write-Host "Caught an exception:" -ForegroundColor Red
-    Write-Host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-    Write-Host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Error $_
   }
   finally{
     $store.Close()

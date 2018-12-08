@@ -84,7 +84,7 @@ function Import-QlikApp {
     If( $name ) {
       $appName = $name
     } Else {
-      $appName = $(gci $file).BaseName
+      $appName = $(Get-ChildItem $file).BaseName
     }
     $appName = [System.Web.HttpUtility]::UrlEncode($appName)
     $path = "/qrs/app/{0}?name=$appName"
@@ -209,7 +209,7 @@ function Update-QlikApp {
     If( $description ) { $app.description = $description }
     If( $customProperties ) {
       $prop = @(
-        $customProperties | foreach {
+        $customProperties | ForEach-Object {
           $val = $_ -Split "="
           $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'" -raw
           @{
@@ -223,7 +223,7 @@ function Update-QlikApp {
 
     If( $tags ) {
       $prop = @(
-        $tags | foreach {
+        $tags | Where-Object {$_} | ForEach-Object {
           $p = Get-QlikTag -filter "name eq '$_'"
           @{
             id = $p.id

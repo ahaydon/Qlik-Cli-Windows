@@ -4,7 +4,7 @@ function FormatOutput($objects, $schemaPath) {
     $rawOutput = $true
     # If enums haven't been read get them and save them for later use
     $enums = Invoke-QlikGet "/qrs/about/api/enums"
-    $Script:enums = $enums | Get-Member -MemberType NoteProperty | foreach { $enums.$($_.Name) }
+    $Script:enums = $enums | Get-Member -MemberType NoteProperty | ForEach-Object { $enums.$($_.Name) }
   }
   If( !$Script:relations ) {
     # If relations haven't been read get them and save them for later use
@@ -24,7 +24,7 @@ function FormatOutput($objects, $schemaPath) {
       $enumsRelated = $Script:enums | where-object { $_.Usages -contains "$schemaPath.$($prop.Name)" }
       If( $enumsRelated ) {
         # If there is an enum for the property then resolve it
-        $value = ((($enumsRelated | select -expandproperty values | where {$_ -like "$($object.$($prop.Name)):*" }) -split ":")[1]).TrimStart()
+        $value = ((($enumsRelated | Select-Object -expandproperty values | Where-Object {$_ -like "$($object.$($prop.Name)):*" }) -split ":")[1]).TrimStart()
         Write-Debug "Resolving $($prop.Name) from $($object.$($prop.Name)) to $value"
         $object.$($prop.Name) = $value
       }
@@ -42,7 +42,7 @@ function FormatOutput($objects, $schemaPath) {
 
 function GetCustomProperties($customProperties) {
   $prop = @(
-    $customProperties | foreach {
+    $customProperties | ForEach-Object {
       $val = $_ -Split "="
       $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
       @{
@@ -56,7 +56,7 @@ function GetCustomProperties($customProperties) {
 
 function GetTags($tags) {
   $prop = @(
-    $tags | foreach {
+    $tags | ForEach-Object {
       $p = Get-QlikTag -filter "name eq '$_'"
       @{
         id = $p.id

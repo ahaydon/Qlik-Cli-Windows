@@ -6,64 +6,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Pester module
-          command: pwsh -Command 'Install-Module Pester -Force'
-      - run:
-          name: Check that the modules can be imported
-          command: pwsh -Command 'Import-Module ./Qlik-Cli.psd1'
-      - run:
-          name: Check that the loaded module version matches the manifest
-          command: |
-            pwsh -Command '
-              Import-Module ./Qlik-Cli.psd1
-              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {
-                Write-Error "Version does not match"
-              }'
-      - run:
-          name: Run Pester tests
-          command: |
-            pwsh -Command '
-              New-Item `
-                -ItemType Directory `
-                -Path /output/test-results/pester
-
-              Invoke-Pester `
-                -EnableExit `
-                -OutputFile /output/test-results/pester/results.xml'
+          name: Test module
+          command: pwsh -File ./.circleci/scripts/test-module.ps1
       - store_test_results:
           path: /output/test-results
       - store_artifacts:
           path: /output/test-results
           destination: test-results
-      - run:
-          name: Concatenate scripts into single module file
-          command: |
-            pwsh -Command '
-              $mod = Import-LocalizedData -FileName Qlik-Cli.psd1
-              $mod.NestedModules + $mod.RootModule |
-                %{Get-Content -raw $_} |
-                Out-File ./Qlik-Cli-Merged.psm1 -Encoding utf8
-            '
-      - run:
-          name: Test merged module exports all commands
-          command: |
-            pwsh -Command '
-              Import-Module ./Qlik-Cli.psd1 -Force
-              $SplitCount = (Get-Command -Module Qlik-Cli).Count
-              Import-Module ./Qlik-Cli-Merged.psm1 -Force
-              $MergedCount = (Get-Command -Module Qlik-Cli-Merged).Count
-              if ($SplitCount -ne $MergedCount) {
-                Write-Error ("Merged module contains wrong number of commands," `
-                           + " has $MergedCount and should have $SplitCount")
-              }
-
-              New-Item `
-                -ItemType Directory `
-                -Path /output/workspace
-
-              Copy-Item ./Qlik-Cli-Merged.psm1 /output/workspace/Qlik-Cli.psm1
-              (Get-Module Qlik-Cli).Version.ToString() |
-                Out-File /output/workspace/version -Encoding utf8'
       - persist_to_workspace:
           root: /output/workspace/
           paths:
@@ -76,45 +25,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Check module version is newer than latest published to PowerShell Gallery
-          command: |
-            pwsh -Command '
-              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {
-                Write-Error "Module version already exists"
-              }'
-      - run:
-          name: Check module version is newer than latest published to GitHub releases
-          command: |
-            pwsh -Command '
-              $password = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
-              $credential = New-Object System.Management.Automation.PSCredential("ahaydon", $password)
-              $release = Invoke-RestMethod `
-                -Method Get `
-                -Uri "https://api.github.com/repos/ahaydon/qlik-cli/releases/latest" `
-                -Credential $credential
-
-              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le [System.Version]$release.tag_name) {
-                Write-Error "Module version must be newer than last published version" -ErrorAction Stop
-              }
-
-              $version = (Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version
-              $release = $null
-              $null = try {
-                $release = Invoke-RestMethod `
-                  -Method Get `
-                  -Uri "https://api.github.com/repos/ahaydon/qlik-cli/releases/tags/$version" `
-                  -Credential $credential `
-                  -ErrorAction SilentlyContinue
-              } catch [System.Net.Http.HttpRequestException] {
-                if ($_.Exception.Response.StatusCode -ne "NotFound") {
-                  Throw $_
-                }
-                $Error | Out-Null #clear the error so we exit cleanly
-              }
-
-              if ($release) {
-                Write-Error "Module version already exists" -ErrorAction Stop
-              }'
+          name: Pre-release checks
+          command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
 
   publish-powershell-gallery:
     docker:
@@ -122,13 +34,6 @@ jobs:
         command: pwsh
     steps:
       - checkout
-      - run:
-          name: Check version has been incremented in manifest
-          command: |
-            pwsh -Command '
-              if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {
-                Write-Error "Version must be newer"
-              }'
       - run:
           name: Install .Net Core SDK
           command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
@@ -161,7 +66,10 @@ workflows:
   version: 2
   test-and-deploy:
     jobs:
-      - test
+      - test:
+          filters:
+            branches:
+              ignore: gh-pages
       - pre-release-checks:
           requires:
             - test

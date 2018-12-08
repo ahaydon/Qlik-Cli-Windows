@@ -86,7 +86,7 @@ function New-QlikNode {
 function Register-QlikNode {
   [CmdletBinding()]
   param (
-    [parameter(Mandatory=$true,Position=0)]
+    [parameter(Position=0)]
     [string]$hostname = $($env:computername),
     [string]$name = $hostname,
     [string]$nodePurpose,
@@ -163,7 +163,7 @@ function Update-QlikNode {
     }
     If( $customProperties ) {
       $prop = @(
-        $customProperties | foreach {
+        $customProperties | ForEach-Object {
           $val = $_ -Split "="
           $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
           @{
