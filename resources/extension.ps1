@@ -19,13 +19,19 @@ function Get-QlikExtension {
 
 function Import-QlikExtension {
   [CmdletBinding()]
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "password")]
   param (
     [String]$ExtensionPath,
-    [String]$Password
+    $Password
   )
 
   PROCESS {
     $Path = "/qrs/extension/upload"
+    if ($Password -is [System.Security.SecureString]) {
+      $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
+    } else {
+      Write-Warning -Message "Use of string password is deprecated, please use SecureString instead."
+    }
     if($Password) {
       $Password = [System.Web.HttpUtility]::UrlEncode($Password)
       $Path += "?password=$Password"

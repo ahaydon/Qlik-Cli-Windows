@@ -1,6 +1,7 @@
 Get-Module Qlik-Cli | Remove-Module -Force
 Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\app.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
 
 Describe "Publish-QlikApp" {
   Mock Invoke-QlikPut { return $path } -Verifiable
@@ -45,6 +46,43 @@ Describe "Import-QlikApp" {
         -name 'my new app'
 
       $app | Should Match 'name=my\+new\+app'
+
+      Assert-VerifiableMock
+    }
+  }
+}
+
+Describe "Update-QlikApp" {
+  Mock Invoke-QlikPut -Verifiable {
+    return ConvertFrom-Json $body
+  }
+
+  Mock Get-QlikApp -ParameterFilter {
+    $id -eq '982a578f-d335-4e4f-81be-c031e6acb780'
+  } {
+    return '{"id": "982a578f-d335-4e4f-81be-c031e6acb780", "tags": {"id": "1b029edc-9c86-4e01-8c39-a10b1d9c4424", "name": "MyTag"}}' | ConvertFrom-Json
+  }
+
+  Mock Get-QlikTag {
+    return $null
+  }
+
+  Context 'tags' {
+    It 'should be possible to remove all tags from an app' {
+      $app = Update-QlikApp `
+        -id '982a578f-d335-4e4f-81be-c031e6acb780' `
+        -tags $null
+
+      $app.tags | Should -BeNullOrEmpty
+
+      Assert-VerifiableMock
+    }
+
+    It 'should not remove tags if parameter not provided' {
+      $app = Update-QlikApp `
+        -id '982a578f-d335-4e4f-81be-c031e6acb780'
+
+      $app.tags | Should -HaveCount 1
 
       Assert-VerifiableMock
     }

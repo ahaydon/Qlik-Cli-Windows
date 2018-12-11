@@ -35,7 +35,7 @@ function Add-QlikVirtualProxy {
     $params = $psBoundParameters
     If( $params.ContainsKey("loadBalancingServerNodes") )
     {
-      $params["loadBalancingServerNodes"] = @( $proxy.loadBalancingServerNodes | foreach { $_.id } ) + $loadBalancingServerNodes
+      $params["loadBalancingServerNodes"] = @( $proxy.loadBalancingServerNodes | ForEach-Object { $_.id } ) + $loadBalancingServerNodes
     }
     If( $params.ContainsKey("websocketCrossOriginWhiteList") )
     {
@@ -136,7 +136,7 @@ function New-QlikVirtualProxy {
     [alias("wsorigin")]
     [string[]]$websocketCrossOriginWhiteList = "",
 
-    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+    [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
     [String]$authenticationMethod="ticket",
 
     [String]$samlMetadataIdP="",
@@ -162,7 +162,7 @@ function New-QlikVirtualProxy {
   PROCESS {
     If( $loadBalancingServerNodes ) {
       $engines = @(
-        $loadBalancingServerNodes | foreach {
+        $loadBalancingServerNodes | ForEach-Object {
           If( $_ -match $script:guid ) {
             @{ id = $_ }
           } else {
@@ -180,6 +180,7 @@ function New-QlikVirtualProxy {
       "dynamic" { 2 }
       "saml"    { 3 }
       "jwt"     { 4 }
+      default   { $authenticationMethod }
     }
     $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
       "sha1"   { 0 }
@@ -277,7 +278,7 @@ function Update-QlikProxy {
     if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
     If( $customProperties ) {
       $prop = @(
-        $customProperties | foreach {
+        $customProperties | ForEach-Object {
           $val = $_ -Split "="
           $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
           @{
@@ -290,7 +291,7 @@ function Update-QlikProxy {
     }
     If( $null -ne $virtualProxies ) {
       $set = New-Object System.Collections.Generic.HashSet[string]
-      $virtualProxies | foreach {
+      $virtualProxies | ForEach-Object {
         If( $_ -match $script:guid ) {
           $res = $set.Add($_)
         } elseif ($_ -ne '') {
@@ -301,13 +302,13 @@ function Update-QlikProxy {
           }
         }
       }
-      $proxy.settings.virtualProxies | foreach {
+      $proxy.settings.virtualProxies | ForEach-Object {
         If ($_.defaultVirtualProxy) {
           $res = $set.Add($_.id)
         }
       }
       $vProxies = @(
-        $set | foreach {
+        $set | ForEach-Object {
           @{ id = $_ }
         }
       )
@@ -351,7 +352,7 @@ function Update-QlikVirtualProxy {
 
     [String]$magicLinkFriendlyName,
 
-    [ValidateSet("ticket","static","dynamic","saml","jwt", IgnoreCase=$false)]
+    [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
     [String]$authenticationMethod,
 
     [String]$samlMetadataIdP,
@@ -386,7 +387,7 @@ function Update-QlikVirtualProxy {
     If( $psBoundParameters.ContainsKey("windowsAuthenticationEnabledDevicePattern") ) { $proxy.windowsAuthenticationEnabledDevicePattern = $windowsAuthenticationEnabledDevicePattern }
     If( $psBoundParameters.ContainsKey("loadBalancingServerNodes") ) {
       $engines = @(
-        $loadBalancingServerNodes | foreach {
+        $loadBalancingServerNodes | ForEach-Object {
           If( $_ -match $script:guid ) {
             @{ id = $_ }
           } else {
@@ -409,6 +410,7 @@ function Update-QlikVirtualProxy {
           "dynamic" { 2 }
           "saml"    { 3 }
           "jwt"     { 4 }
+          default   { $authenticationMethod }
         }
     }
     If( $psBoundParameters.ContainsKey("samlMetadataIdP") ) {$proxy.samlMetadataIdP = $samlMetadataIdP }

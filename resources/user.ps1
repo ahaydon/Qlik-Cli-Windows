@@ -19,7 +19,7 @@ function Get-QlikUser {
     } else {
       $properties = @('name','userDirectory','userId','id')
       #if( $full ) { $properties += @('roles','inactive','blacklisted','removedExternally') }
-      return $result | select -Property $properties
+      return $result | Select-Object -Property $properties
     }
   }
 }

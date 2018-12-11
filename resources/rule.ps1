@@ -33,7 +33,7 @@ function New-QlikRule {
     [alias("filter")]
     [string]$resourceFilter,
 
-    [ValidateSet("hub","qmc","both")]
+    [ValidateSet("hub","qmc","both","BothQlikSenseAndQMC")]
     [alias("context")]
     [string]$rulecontext = "both",
 
@@ -59,7 +59,7 @@ function New-QlikRule {
 						}
 						else
 						{
-							Write-Host "Requested Tag $($_) Not Found. Please Add before trying to use"
+							Write-Warning "Requested Tag $($_) Not Found. Please Add before trying to use"
 						}
 					}
 				)
@@ -75,6 +75,7 @@ function New-QlikRule {
         both { $context = 0 }
         hub { $context = 1 }
         qmc { $context = 2 }
+        default { $context = $rulecontext }
       }
 
       $json = (@{
@@ -148,7 +149,7 @@ function Update-QlikRule {
     If( $rulecontext ) { $systemrule.rulecontext = $context }
     If( $actions ) { $systemrule.actions = $actions }
     If( $comment ) { $systemrule.comment = $comment }
-    If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled }
+    If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
 
     $json = $systemrule | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/systemrule/$id" $json
