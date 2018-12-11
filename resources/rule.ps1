@@ -33,7 +33,7 @@ function New-QlikRule {
     [alias("filter")]
     [string]$resourceFilter,
 
-    [ValidateSet("hub","qmc","both")]
+    [ValidateSet("hub","qmc","both","BothQlikSenseAndQMC")]
     [alias("context")]
     [string]$rulecontext = "both",
 
@@ -75,6 +75,7 @@ function New-QlikRule {
         both { $context = 0 }
         hub { $context = 1 }
         qmc { $context = 2 }
+        default { $context = $rulecontext }
       }
 
       $json = (@{
