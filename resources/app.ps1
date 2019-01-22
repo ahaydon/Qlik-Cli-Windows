@@ -200,7 +200,10 @@ function Update-QlikApp {
     [string]$description,
     [string[]]$customProperties,
     [string[]]$tags,
-    [string]$ownername
+    [string]$ownername,
+    
+    [string]$ownerId,
+    [string]$ownerDirectory
   )
 
   PROCESS {
@@ -235,6 +238,10 @@ function Update-QlikApp {
 
     If( $ownername ) {
       $prop = Get-QlikUser -filter "name eq '$($ownername)'"
+      $app.owner = $prop
+    }
+    If( $ownerId -and $ownerDirectory ) {
+      $prop = Get-QlikUser -filter "userid eq '$($ownerId)' and userdirectory eq '$($ownerDirectory)'"
       $app.owner = $prop
     }
 
