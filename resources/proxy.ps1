@@ -136,6 +136,8 @@ function New-QlikVirtualProxy {
     [alias("wsorigin")]
     [string[]]$websocketCrossOriginWhiteList = "",
 
+    [String]$additionalResponseHeaders = "",
+
     [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
     [String]$authenticationMethod="ticket",
 
@@ -194,6 +196,7 @@ function New-QlikVirtualProxy {
       loadBalancingServerNodes=$engines;
       sessionCookieHeaderName=$sessionCookieHeaderName;
       websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
+      additionalResponseHeaders=$additionalResponseHeaders;
       sessionInactivityTimeout=$sessionInactivityTimeout;
       authenticationMethod=$authenticationMethodCode;
       samlMetadataIdP=$samlMetadataIdP;
