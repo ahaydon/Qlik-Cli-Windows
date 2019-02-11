@@ -158,6 +158,14 @@ function New-QlikVirtualProxy {
     [ValidateSet("sha1","sha256")]
     [String]$samlSigningAlgorithm="sha1",
 
+    [String]$jwtPublicKeyCertificate = "",
+
+    [String]$jwtAttributeUserId = "",
+
+    [String]$jwtAttributeUserDirectory = "",
+
+    [hashtable[]]$jwtAttributeMap = @(),
+
     [Int]$sessionInactivityTimeout = 30
   )
 
@@ -207,6 +215,10 @@ function New-QlikVirtualProxy {
       samlAttributeMap=$samlAttributeMap;
       samlSlo=$samlSlo.IsPresent;
       samlAttributeSigningAlgorithm=$samlSigningAlgorithmCode;
+      jwtPublicKeyCertificate=$jwtPublicKeyCertificate;
+      jwtAttributeUserId=$jwtAttributeUserId;
+      jwtAttributeUserDirectory=$jwtAttributeUserDirectory;
+      jwtAttributeMap=$jwtAttributeMap;
     } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
@@ -375,6 +387,14 @@ function Update-QlikVirtualProxy {
     [ValidateSet("sha1","sha256")]
     [String]$samlSigningAlgorithm,
 
+    [String]$jwtPublicKeyCertificate,
+
+    [String]$jwtAttributeUserId,
+
+    [String]$jwtAttributeUserDirectory,
+
+    [hashtable[]]$jwtAttributeMap,
+
     [Int]$sessionInactivityTimeout
   )
 
@@ -429,6 +449,10 @@ function Update-QlikVirtualProxy {
         }
     }
     If( $psBoundParameters.ContainsKey("samlSlo") ) {$proxy.samlSlo = $samlSlo.IsPresent }
+    If( $psBoundParameters.ContainsKey("jwtPublicKeyCertificate") ) {$proxy.jwtPublicKeyCertificate = $jwtPublicKeyCertificate }
+    If( $psBoundParameters.ContainsKey("jwtAttributeUserId") ) {$proxy.jwtAttributeUserId = $jwtAttributeUserId }
+    If( $psBoundParameters.ContainsKey("jwtAttributeUserDirectory") ) {$proxy.jwtAttributeUserDirectory = $jwtAttributeUserDirectory }
+    If( $psBoundParameters.ContainsKey("jwtAttributeMap") ) {$proxy.jwtAttributeMap = $jwtAttributeMap }
     If( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) {$proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
