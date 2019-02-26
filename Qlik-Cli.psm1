@@ -158,7 +158,7 @@ function Invoke-QlikPost {
     [string]$path,
     [parameter(Position=1,ValueFromPipeline=$true)]
     [string]$body,
-    [string]$contentType = "application/json"
+    [string]$contentType = "application/json; charset=utf-8"
   )
   PROCESS {
     $params = @{
@@ -176,11 +176,12 @@ function Invoke-QlikPut {
     [parameter(Mandatory=$true,Position=0)]
     [string]$path,
     [parameter(Position=1)]
-    [string]$body
+    [string]$body,
+    [string]$contentType = "application/json; charset=utf-8"
   )
   PROCESS {
     $params = @{
-      ContentType = "application/json"
+      ContentType = $contentType
       Body = $body
     }
 
