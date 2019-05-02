@@ -43,7 +43,11 @@ jobs:
             cd ..
             mv project qlik-cli
             cd qlik-cli
-            pwsh -Command 'Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Verbose'
+            pwsh -Command 'Publish-Module `
+              -Path ./ `
+              -NuGetApiKey $env:PSG_API_KEY `
+              -Tags Qlik, Sense, Windows `
+              -Verbose'
 
   publish-github-release:
     docker:

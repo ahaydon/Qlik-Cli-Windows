@@ -35,7 +35,7 @@ function Connect-Qlik {
     $script:prefix = $null
     $script:webSession = $null
 
-    If( $TrustAllCerts ) {
+    If( $TrustAllCerts -and $PSVersionTable.PSVersion.Major -lt 6 ) {
       add-type @"
         using System.Net;
         using System.Security.Cryptography.X509Certificates;
@@ -49,7 +49,7 @@ function Connect-Qlik {
 "@
       [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
     }
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]'Tls,Tls11,Tls12'
     If( !$Certificate -And !$Credential -And !$UseDefaultCredentials ) {
       $certs = @(FetchCertificate "My" "CurrentUser")
       Write-Verbose "Found $($certs.Count) certificates in CurrentUser store"
@@ -80,6 +80,10 @@ function Connect-Qlik {
       $Script:api_params = @{
         UseDefaultCredentials=$true
       }
+    }
+
+    if ($TrustAllCerts -and $PSVersionTable.PSVersion.Major -ge 6) {
+      $Script:api_params.SkipCertificateCheck = $true
     }
 
     if (! $Computername ) {
