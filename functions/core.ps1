@@ -25,11 +25,19 @@ function CallRestUri($method, $path, $extraParams) {
   If( $params.Body ) { Write-Verbose $params.Body }
 
   Write-Verbose "Calling $method for $path"
-  If( $null -eq $script:webSession ) {
-    $result = Invoke-RestMethod -Method $method -Uri $path @params -SessionVariable webSession
-    $script:webSession = $webSession
-  } else {
-    $result = Invoke-RestMethod -Method $method -Uri $path @params -WebSession $script:webSession
+  try {
+    If( $null -eq $script:webSession ) {
+      $result = Invoke-RestMethod -Method $method -Uri $path @params -SessionVariable webSession
+      $script:webSession = $webSession
+    } elseif ($params.OutFile) {
+      $result = Invoke-WebRequest -Method $method -Uri $path @params -WebSession $script:webSession
+    } else {
+      $result = Invoke-RestMethod -Method $method -Uri $path @params -WebSession $script:webSession
+    }
+  }
+  catch {
+    throw $_
+    return
   }
 
   if( !$rawOutput ) {

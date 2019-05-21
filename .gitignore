@@ -5,3 +5,8 @@ packer_cache/
 *.box
 license.json
 .vs
+.vagrant
+
+# keys
+*.pfx
+*.pem
