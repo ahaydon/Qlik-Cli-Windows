@@ -42,7 +42,7 @@ function FormatOutput($objects, $schemaPath) {
 
 function GetCustomProperties($customProperties) {
   $prop = @(
-    $customProperties | ForEach-Object {
+    $customProperties | Where-Object {$_} | ForEach-Object {
       $val = $_ -Split "="
       $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
       @{
@@ -56,7 +56,7 @@ function GetCustomProperties($customProperties) {
 
 function GetTags($tags) {
   $prop = @(
-    $tags | ForEach-Object {
+    $tags | Where-Object {$_} | ForEach-Object {
       $p = Get-QlikTag -filter "name eq '$_'"
       @{
         id = $p.id

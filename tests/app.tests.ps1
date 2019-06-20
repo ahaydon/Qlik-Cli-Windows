@@ -1,7 +1,9 @@
 Get-Module Qlik-Cli | Remove-Module -Force
 Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\app.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
 
 Describe "Publish-QlikApp" {
   Mock Invoke-QlikPut { return $path } -Verifiable
@@ -60,7 +62,15 @@ Describe "Update-QlikApp" {
   Mock Get-QlikApp -ParameterFilter {
     $id -eq '982a578f-d335-4e4f-81be-c031e6acb780'
   } {
-    return '{"id": "982a578f-d335-4e4f-81be-c031e6acb780", "tags": {"id": "1b029edc-9c86-4e01-8c39-a10b1d9c4424", "name": "MyTag"}}' | ConvertFrom-Json
+    return @{
+      id = '982a578f-d335-4e4f-81be-c031e6acb780'
+      tags = @(@{
+        id = '1b029edc-9c86-4e01-8c39-a10b1d9c4424'
+      })
+      customProperties = @(@{
+        id = 'a834722d-1306-499e-b028-11454240381b'
+      })
+    }
   }
 
   Mock Get-QlikTag {
@@ -68,7 +78,7 @@ Describe "Update-QlikApp" {
   }
 
   Context 'tags' {
-    It 'should be possible to remove all tags from an app' {
+    It 'should be possible to remove all tags' {
       $app = Update-QlikApp `
         -id '982a578f-d335-4e4f-81be-c031e6acb780' `
         -tags $null
@@ -83,6 +93,31 @@ Describe "Update-QlikApp" {
         -id '982a578f-d335-4e4f-81be-c031e6acb780'
 
       $app.tags | Should -HaveCount 1
+
+      Assert-VerifiableMock
+    }
+  }
+
+  Context 'custom property' {
+    Mock Get-QlikApp {
+      return $null
+    }
+
+    It 'should be possible to remove all custom properties' {
+      $app = Update-QlikApp `
+        -id '982a578f-d335-4e4f-81be-c031e6acb780' `
+        -customProperties $null
+
+      $app.customProperties | Should -BeNullOrEmpty
+
+      Assert-VerifiableMock
+    }
+
+    It 'should not remove custom properties if parameter not provided' {
+      $app = Update-QlikApp `
+        -id '982a578f-d335-4e4f-81be-c031e6acb780'
+
+      $app.customProperties | Should -HaveCount 1
 
       Assert-VerifiableMock
     }

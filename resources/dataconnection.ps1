@@ -121,8 +121,8 @@ function Update-QlikDataConnection {
         $qdc | Add-Member -MemberType NoteProperty -Name "password" -Value $($Credential.GetNetworkCredential().Password)
       }
     }
-    if( $customProperties ) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
-    if( $tags ) { $qdc.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
     $json = $qdc | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/dataconnection/$id" $json
   }

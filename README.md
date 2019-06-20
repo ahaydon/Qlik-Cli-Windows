@@ -5,7 +5,7 @@ Qlik-Cli is a PowerShell module that provides a command line interface for manag
 [![Release](https://img.shields.io/powershellgallery/v/Qlik-Cli.svg?label=release)](https://www.powershellgallery.com/packages/Qlik-Cli)
 [![Downloads](https://img.shields.io/powershellgallery/dt/Qlik-Cli.svg?color=blue)](https://www.powershellgallery.com/packages/Qlik-Cli)
 [![Slack](https://img.shields.io/static/v1.svg?message=qlik-branch&label=slack&color=yellow)](https://qlik-branch.slack.com/messages/CBZLDMTTN)
-![License](https://img.shields.io/github/license/ahaydon/Qlik-Cli.svg)
+[![License](https://img.shields.io/github/license/ahaydon/Qlik-Cli.svg)](https://github.com/ahaydon/Qlik-Cli/blob/master/LICENSE)
 
 The desired state configuration module has now been moved to https://github.com/ahaydon/Qlik-DSC
 

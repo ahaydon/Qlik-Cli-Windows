@@ -29,7 +29,8 @@ function CallRestUri($method, $path, $extraParams) {
     If( $null -eq $script:webSession ) {
       $result = Invoke-RestMethod -Method $method -Uri $path @params -SessionVariable webSession
       $script:webSession = $webSession
-    } elseif ($params.OutFile) {
+    } elseif ($params.OutFile -or $params.InFile) {
+      $ProgressPreference = 'SilentlyContinue'
       $result = Invoke-WebRequest -Method $method -Uri $path @params -WebSession $script:webSession
     } else {
       $result = Invoke-RestMethod -Method $method -Uri $path @params -WebSession $script:webSession

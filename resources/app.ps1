@@ -201,7 +201,7 @@ function Update-QlikApp {
     [string[]]$customProperties,
     [string[]]$tags,
     [string]$ownername,
-    
+
     [string]$ownerId,
     [string]$ownerDirectory
   )
@@ -210,31 +210,8 @@ function Update-QlikApp {
     $app = Get-QlikApp $id -raw
     If( $name ) { $app.name = $name }
     If( $description ) { $app.description = $description }
-    If( $customProperties ) {
-      $prop = @(
-        $customProperties | ForEach-Object {
-          $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'" -raw
-          @{
-            value = ($p.choiceValues -eq $val[1])[0]
-            definition = $p
-          }
-        }
-      )
-      $app.customProperties = $prop
-    }
-
-    If( $PSBoundParameters.ContainsKey("tags") ) {
-      $prop = @(
-        $tags | Where-Object {$_} | ForEach-Object {
-          $p = Get-QlikTag -filter "name eq '$_'"
-          @{
-            id = $p.id
-          }
-        }
-      )
-      $app.tags = $prop
-    }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $app.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $app.tags = @(GetTags $tags) }
 
     If( $ownername ) {
       $prop = Get-QlikUser -filter "name eq '$($ownername)'"
