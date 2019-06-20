@@ -23,6 +23,7 @@ function New-QlikStream {
     [parameter(Mandatory=$true,Position=0)]
     [string]$name,
 
+    [object]$owner,
     [string[]]$customProperties,
     [string[]]$tags
   )
@@ -34,6 +35,7 @@ function New-QlikStream {
 
     if ($PSBoundParameters.ContainsKey("customProperties")) { $stream.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $stream.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
 
     $json = $stream | ConvertTo-Json -Compress -Depth 10
 
@@ -58,6 +60,7 @@ function Update-QlikStream {
         [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
         [string]$id,
 
+        [object]$owner,
         [string[]]$customProperties,
         [string[]]$tags
     )
@@ -66,6 +69,8 @@ function Update-QlikStream {
         $stream = Get-QlikStream $id -raw
         if ($PSBoundParameters.ContainsKey("customProperties")) { $stream.customProperties = @(GetCustomProperties $customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $stream.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
+
         $json = $stream | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut "/qrs/stream/$id" $json
     }

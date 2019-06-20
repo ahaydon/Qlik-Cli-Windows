@@ -53,6 +53,7 @@ function New-QlikContentLibrary {
     [parameter(Mandatory=$true,Position=0)]
     [string]$name,
 
+    [object]$owner,
     [string[]]$customProperties,
     [string[]]$tags
   )
@@ -64,6 +65,7 @@ function New-QlikContentLibrary {
 
     if ($PSBoundParameters.ContainsKey("customProperties")) { $lib.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $lib.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
 
     $json = $lib | ConvertTo-Json -Compress -Depth 10
 

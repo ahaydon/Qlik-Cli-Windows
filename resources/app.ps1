@@ -200,8 +200,8 @@ function Update-QlikApp {
     [string]$description,
     [string[]]$customProperties,
     [string[]]$tags,
+    [object]$owner,
     [string]$ownername,
-
     [string]$ownerId,
     [string]$ownerDirectory
   )
@@ -214,13 +214,16 @@ function Update-QlikApp {
     if ($PSBoundParameters.ContainsKey("tags")) { $app.tags = @(GetTags $tags) }
 
     If( $ownername ) {
+      Write-Warning -Message "Use of ownername is deprecated, please use owner instead."
       $prop = Get-QlikUser -filter "name eq '$($ownername)'"
       $app.owner = $prop
     }
     If( $ownerId -and $ownerDirectory ) {
+      Write-Warning -Message "Use of ownerId and ownerDirectory is deprecated, please use owner instead."
       $prop = Get-QlikUser -filter "userid eq '$($ownerId)' and userdirectory eq '$($ownerDirectory)'"
       $app.owner = $prop
     }
+    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
 
     $json = $app | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/app/$id" $json
