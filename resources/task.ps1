@@ -145,23 +145,11 @@ function New-QlikTask {
     [string]$appId,
     [parameter(Mandatory=$true,Position=1)]
     [string]$name,
+    [string[]]$customProperties,
     [string[]]$tags
   )
 
   PROCESS {
-    If( $tags ) {
-      $tagArray = @(
-        $tags | ForEach-Object {
-          $p = Get-QlikTag -filter "name eq '$_'" -raw
-          @{
-            id = $p.id
-          }
-        }
-      )
-    } else {
-      $tagArray = @();
-    }
-
     $task = @{
       task = @{
         name = $name;
@@ -169,14 +157,15 @@ function New-QlikTask {
         enabled = $true;
         taskSessionTimeout = 1440;
         maxRetries = 0;
-        tags = $tagArray;
         app = @{
           id = $appId
         };
         isManuallyTriggered = $false;
-        customProperties = @()
       };
     }
+
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $task.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags) }
 
     $json = $task | ConvertTo-Json -Compress -Depth 10
 
@@ -242,7 +231,8 @@ function Update-QlikReloadTask {
     [ValidateRange(0,20)]
     [Int]$MaxRetries,
 
-    [string[]]$Tags
+    [string[]]$customProperties,
+    [string[]]$tags
   )
 
   PROCESS {
@@ -250,10 +240,9 @@ function Update-QlikReloadTask {
     If( $psBoundParameters.ContainsKey("Enabled") ) { $task.enabled = $Enabled }
     If( $psBoundParameters.ContainsKey("TaskSessionTimeout") ) { $task.taskSessionTimeout = $TaskSessionTimeout }
     If( $psBoundParameters.ContainsKey("MaxRetries") ) { $task.maxRetries = $MaxRetries }
-    If ($tags)
-    {
-      $task.tags = @(GetTags $tags)
-    }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $task.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags) }
+
     $json = $task | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut -Path "/qrs/reloadtask/$id" -Body $json
   }

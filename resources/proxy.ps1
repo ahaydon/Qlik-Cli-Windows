@@ -395,7 +395,11 @@ function Update-QlikVirtualProxy {
 
     [hashtable[]]$jwtAttributeMap,
 
-    [Int]$sessionInactivityTimeout
+    [Int]$sessionInactivityTimeout,
+
+    [string[]]$customProperties,
+
+    [string[]]$tags
   )
 
   PROCESS {
@@ -454,6 +458,9 @@ function Update-QlikVirtualProxy {
     If( $psBoundParameters.ContainsKey("jwtAttributeUserDirectory") ) {$proxy.jwtAttributeUserDirectory = $jwtAttributeUserDirectory }
     If( $psBoundParameters.ContainsKey("jwtAttributeMap") ) {$proxy.jwtAttributeMap = $jwtAttributeMap }
     If( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) {$proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $proxy.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $proxy.tags = @(GetTags $tags) }
+
     $json = $proxy | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
   }

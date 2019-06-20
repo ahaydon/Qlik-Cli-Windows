@@ -43,7 +43,7 @@ function New-QlikDataConnection {
       $username = $Credential.GetNetworkCredential().Username
       $password = $Credential.GetNetworkCredential().Password
     }
-    $json = @{
+    $qdc = @{
       customProperties=@();
       engineObjectId=[Guid]::NewGuid();
       username=$username;
@@ -53,33 +53,10 @@ function New-QlikDataConnection {
       type=$type
     }
 
-    If( $customProperties ) {
-      $prop = @(
-        $customProperties | ForEach-Object {
-          $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
-          @{
-            value = ($p.choiceValues -eq $val[1])[0]
-            definition = $p
-          }
-        }
-      )
-      $json.customProperties = $prop
-    }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
 
-    If( $tags ) {
-      $prop = @(
-        $tags | ForEach-Object {
-          $p = Get-QlikTag -filter "name eq '$_'"
-          @{
-            id = $p.id
-          }
-        }
-      )
-      $json.tags = $prop
-    }
-
-    $json = $json | ConvertTo-Json -Compress -Depth 10
+    $json = $qdc | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost "/qrs/dataconnection" $json
   }

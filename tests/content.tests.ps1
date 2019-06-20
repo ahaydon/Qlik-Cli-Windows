@@ -60,7 +60,7 @@ Describe "New-QlikContentLibrary" {
         -name 'Test Library' `
         -customProperties 'Test=Yes'
 
-      $lib.customProperties | Should -BeNullOrEmpty
+      $lib.customProperties | Should -HaveCount 1
 
       Assert-VerifiableMock
     }
@@ -70,7 +70,7 @@ Describe "New-QlikContentLibrary" {
         -name 'Test Library' `
         -customProperties 'Test=Yes', 'Test=it works', 'Multi=Yes'
 
-      $lib.customProperties | Should -HaveCount 2
+      $lib.customProperties | Should -HaveCount 3
 
       Assert-VerifiableMock
     }
