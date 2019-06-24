@@ -1,6 +1,7 @@
 Get-Module Qlik-Cli | Remove-Module -Force
 Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\app.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\resources\user.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\functions\core.ps1").Path
 
