@@ -83,9 +83,9 @@ function GetUser($param) {
     }
 
     Get-QlikUser -filter "userDirectory eq '$userDirectory' and userId eq '$userId'"
-  } elseif ($param -is [System.Collections.Hashtable]) {
+  } elseif ($param -is [System.Collections.Hashtable] -or $param -is [System.Management.Automation.PSCustomObject]) {
     return $param
   } else {
-    throw 'Invalid type for user parameter'
+    throw "Invalid type for user parameter, $($param.GetType().Name)"
   }
 }

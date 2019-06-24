@@ -95,7 +95,7 @@ Describe 'GetUser function' {
       Mock Get-QlikUser -ParameterFilter {
         $id -eq '4f8fcab4-1de6-41f8-917b-f53342c97e86'
       } {
-        return @{
+        return [PSCustomObject]@{
           id = '4f8fcab4-1de6-41f8-917b-f53342c97e86'
           userDirectory = 'directory'
           userId = 'user'
