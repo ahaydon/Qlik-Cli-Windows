@@ -30,7 +30,9 @@ function New-QlikUser {
     [string]$userId,
     [string]$userDirectory,
     [string]$name = $userId,
-    [string[]]$roles
+    [string[]]$roles,
+    [string[]]$customProperties,
+    [string[]]$tags
   )
 
   PROCESS {
@@ -40,6 +42,8 @@ function New-QlikUser {
       name=$name
     }
     if($roles) { $user.roles = $roles }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $user.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $user.tags = @(GetTags $tags) }
     $json = $user | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost "/qrs/user" $json
@@ -74,12 +78,9 @@ function Update-QlikUser {
     $user = Get-QlikUser $id -raw
     If( $roles ) { $user.roles = $roles }
     If( $name ) { $user.name = $name }
-    If( $customProperties ) {
-      $user.customProperties = @(GetCustomProperties $customProperties)
-    }
-    If( $tags ) {
-      $user.tags = @(GetTags $tags)
-    }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $user.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $user.tags = @(GetTags $tags) }
+
     $json = $user | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/user/$id" $json
   }

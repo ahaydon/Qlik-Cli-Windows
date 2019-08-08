@@ -23,9 +23,12 @@ Describe "Import-QlikExtension" {
       $password = 'Pa$$w0rd'
       $result = Import-QlikExtension `
         -ExtensionPath 'test.qvf' `
-        -Password $password
+        -Password $password `
+        -WarningVariable LastWarning `
+        -WarningAction SilentlyContinue
 
       $result | Should Match 'password=Pa%24%24w0rd'
+      $LastWarning | Should Be 'Use of string password is deprecated, please use SecureString instead.'
 
       Assert-VerifiableMock
     }

@@ -40,46 +40,15 @@ function New-QlikRule {
     [int64]$actions,
     [string]$comment,
     [switch]$disabled,
-    $tags
+    [string[]]$customProperties,
+    [string[]]$tags
   )
 
   PROCESS {
     If( $object ) {
       $json = $object | ConvertTo-Json -Compress -Depth 10
     } else {
-
-			If ($Tags)
-			{
-				$TagIDs = @(
-					$Tags | ForEach-Object {
-						$QTag = Get-QlikTag -filter "name eq '$_'"
-						if ($null -ne $QTag)
-						{
-							@{ id = $QTag.id }
-						}
-						else
-						{
-							Write-Warning "Requested Tag $($_) Not Found. Please Add before trying to use"
-						}
-					}
-				)
-			}
-			else
-			{
-				$TagIDs = @()
-			}
-      # category is case-sensitive so convert to Title Case
-      $category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
-      switch ($rulecontext)
-      {
-        both { $context = 0 }
-        hub { $context = 1 }
-        qmc { $context = 2 }
-        default { $context = $rulecontext }
-      }
-
-      $json = (@{
-        category = $category;
+      $systemrule = @{
         type = "Custom";
         rule = $rule;
         name = $name;
@@ -88,9 +57,24 @@ function New-QlikRule {
         comment = $comment;
         disabled = $disabled.IsPresent;
         ruleContext = $context;
-        tags = $TagIDs;
+        customProperties=@();
         schemaPath = "SystemRule"
-      } | ConvertTo-Json -Compress)
+      }
+
+      if ($PSBoundParameters.ContainsKey("customProperties")) { $systemrule.customProperties = @(GetCustomProperties $customProperties) }
+      if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags) }
+      # category is case-sensitive so convert to Title Case
+      $systemrule.category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
+
+      $systemrule.ruleContext = switch ($rulecontext)
+      {
+        both { 0 }
+        hub { 1 }
+        qmc { 2 }
+        default { $rulecontext }
+      }
+
+      $json = $systemrule | ConvertTo-Json -Compress -Depth 10
     }
 
     return Invoke-QlikPost "/qrs/systemrule" $json
@@ -130,7 +114,10 @@ function Update-QlikRule {
 
     [int64]$actions,
     [string]$comment,
-    [switch]$disabled
+    [switch]$disabled,
+
+    [string[]]$customProperties,
+    [string[]]$tags
   )
 
   PROCESS {
@@ -150,6 +137,8 @@ function Update-QlikRule {
     If( $actions ) { $systemrule.actions = $actions }
     If( $comment ) { $systemrule.comment = $comment }
     If( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $systemrule.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags) }
 
     $json = $systemrule | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/systemrule/$id" $json

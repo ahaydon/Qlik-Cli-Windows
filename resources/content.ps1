@@ -53,42 +53,21 @@ function New-QlikContentLibrary {
     [parameter(Mandatory=$true,Position=0)]
     [string]$name,
 
+    [object]$owner,
     [string[]]$customProperties,
     [string[]]$tags
   )
 
   PROCESS {
-    $stream = @{
+    $lib = @{
       name=$name;
     }
 
-    If( $customProperties ) {
-      $prop = @(
-        $customProperties | ForEach-Object {
-          $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
-          @{
-            value = ($p.choiceValues -eq $val[1])[0]
-            definition = $p
-          }
-        }
-      )
-      $stream.customProperties = $prop
-    }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $lib.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $lib.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
 
-    If( $tags ) {
-      $prop = @(
-        $tags | ForEach-Object {
-          $p = Get-QlikTag -filter "name eq '$_'"
-          @{
-            id = $p.id
-          }
-        }
-      )
-      $stream.tags = $prop
-    }
-
-    $json = $stream | ConvertTo-Json -Compress -Depth 10
+    $json = $lib | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost '/qrs/contentlibrary' $json
   }

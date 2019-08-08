@@ -42,7 +42,7 @@ function FormatOutput($objects, $schemaPath) {
 
 function GetCustomProperties($customProperties) {
   $prop = @(
-    $customProperties | ForEach-Object {
+    $customProperties | Where-Object {$_} | ForEach-Object {
       $val = $_ -Split "="
       $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
       @{
@@ -56,7 +56,7 @@ function GetCustomProperties($customProperties) {
 
 function GetTags($tags) {
   $prop = @(
-    $tags | ForEach-Object {
+    $tags | Where-Object {$_} | ForEach-Object {
       $p = Get-QlikTag -filter "name eq '$_'"
       @{
         id = $p.id
@@ -64,4 +64,28 @@ function GetTags($tags) {
     }
   )
   return $prop
+}
+
+function GetUser($param) {
+  if ($param -is [System.String]) {
+    if ($param -match $script:guid) {
+      return @{ id = $param }
+    } elseif ($param -match '\w+\\\w+') {
+      $parts = $param -split '\\'
+      $userDirectory = $parts[0]
+      $userId = $parts[1]
+    } elseif ($param -match '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$') {
+      $parts = $param -split '@'
+      $userId = $parts[0]
+      $userDirectory = $parts[1]
+    } else {
+      throw 'Unrecognised format for user parameter'
+    }
+
+    Get-QlikUser -filter "userDirectory eq '$userDirectory' and userId eq '$userId'"
+  } elseif ($param -is [System.Collections.Hashtable] -or $param -is [System.Management.Automation.PSCustomObject]) {
+    return $param
+  } else {
+    throw "Invalid type for user parameter, $($param.GetType().Name)"
+  }
 }

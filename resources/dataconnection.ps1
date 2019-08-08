@@ -32,7 +32,8 @@ function New-QlikDataConnection {
     [string[]]$tags,
     [string]$username,
     [string]$password,
-    [PSCredential]$Credential
+    [PSCredential]$Credential,
+    [object]$owner
   )
 
   PROCESS {
@@ -43,7 +44,7 @@ function New-QlikDataConnection {
       $username = $Credential.GetNetworkCredential().Username
       $password = $Credential.GetNetworkCredential().Password
     }
-    $json = @{
+    $qdc = @{
       customProperties=@();
       engineObjectId=[Guid]::NewGuid();
       username=$username;
@@ -53,33 +54,11 @@ function New-QlikDataConnection {
       type=$type
     }
 
-    If( $customProperties ) {
-      $prop = @(
-        $customProperties | ForEach-Object {
-          $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
-          @{
-            value = ($p.choiceValues -eq $val[1])[0]
-            definition = $p
-          }
-        }
-      )
-      $json.customProperties = $prop
-    }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
 
-    If( $tags ) {
-      $prop = @(
-        $tags | ForEach-Object {
-          $p = Get-QlikTag -filter "name eq '$_'"
-          @{
-            id = $p.id
-          }
-        }
-      )
-      $json.tags = $prop
-    }
-
-    $json = $json | ConvertTo-Json -Compress -Depth 10
+    $json = $qdc | ConvertTo-Json -Compress -Depth 10
 
     return Invoke-QlikPost "/qrs/dataconnection" $json
   }
@@ -104,6 +83,7 @@ function Update-QlikDataConnection {
     [string]$id,
     [string]$ConnectionString,
     [PSCredential]$Credential,
+    [object]$owner,
     [string[]]$customProperties,
     [string[]]$tags
   )
@@ -121,8 +101,10 @@ function Update-QlikDataConnection {
         $qdc | Add-Member -MemberType NoteProperty -Name "password" -Value $($Credential.GetNetworkCredential().Password)
       }
     }
-    if( $customProperties ) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
-    if( $tags ) { $qdc.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
+
     $json = $qdc | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/dataconnection/$id" $json
   }

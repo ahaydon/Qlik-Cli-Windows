@@ -161,20 +161,8 @@ function Update-QlikNode {
             Both { $node.nodePurpose = 2 }
         }
     }
-    If( $customProperties ) {
-      $prop = @(
-        $customProperties | ForEach-Object {
-          $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
-          @{
-            value = ($p.choiceValues -eq $val[1])[0]
-            definition = $p
-          }
-        }
-      )
-      $node.customProperties = $prop
-    }
-    If( $tags ) { $node.tags = $tags }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $node.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $node.tags = @(GetTags $tags) }
     If( $psBoundParameters.ContainsKey("engineEnabled") ) { $node.engineEnabled = $engineEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled.IsPresent }

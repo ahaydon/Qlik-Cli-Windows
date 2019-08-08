@@ -51,3 +51,26 @@ function Remove-QlikExtension {
     return Invoke-QlikDelete "/qrs/extension/name/$ename"
   }
 }
+
+function Update-QlikExtension {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+    [string]$id,
+
+    [string]$name,
+    [object]$owner,
+    [string[]]$customProperties,
+    [string[]]$tags
+  )
+
+  PROCESS {
+    $ext = Get-QlikExtension -raw -id $id
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $app.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("tags")) { $ext.tags = @(GetTags $tags) }
+    if ($PSBoundParameters.ContainsKey("owner")) { $ext.owner = GetUser $owner }
+
+    $json = $ext | ConvertTo-Json -Compress -Depth 10
+    return Invoke-QlikPut "/qrs/extension/$id" $json
+  }
+}

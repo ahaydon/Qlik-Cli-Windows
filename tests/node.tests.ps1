@@ -1,6 +1,9 @@
 Get-Module Qlik-Cli | Remove-Module -Force
 Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\node.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
+. (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
 
 Describe "New-QlikNode" {
   Mock Invoke-QlikPost { $script:node = ConvertFrom-Json $body } -Verifiable
@@ -67,6 +70,12 @@ Describe "Update-QlikNode" {
       proxyEnabled = $false
       schedulerEnabled = $false
       failoverCandidate = $false
+      tags = @(@{
+        id = '1b029edc-9c86-4e01-8c39-a10b1d9c4424'
+      })
+      customProperties = @(@{
+        id = 'a834722d-1306-499e-b028-11454240381b'
+      })
     }
   }
 
@@ -118,6 +127,56 @@ Describe "Update-QlikNode" {
       $node.failoverCandidate | Should Be $true
 
       Assert-MockCalled Get-QlikNode -ParameterFilter { $id -eq 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' }
+    }
+  }
+
+  Context 'tag' {
+    Mock Get-QlikTag {
+      return $null
+    }
+
+    It 'should be possible to remove all tags' {
+      $app = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' `
+        -tags $null
+
+      $app.tags | Should -BeNullOrEmpty
+
+      Assert-VerifiableMock
+    }
+
+    It 'should not remove tags if parameter not provided' {
+      $app = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af'
+
+      $app.tags | Should -HaveCount 1
+
+      Assert-VerifiableMock
+    }
+  }
+
+  Context 'custom property' {
+    Mock Get-QlikCustomProperty {
+      return $null
+    }
+
+    It 'should be possible to remove all custom properties' {
+      $app = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' `
+        -customProperties $null
+
+      $app.customProperties | Should -BeNullOrEmpty
+
+      Assert-VerifiableMock
+    }
+
+    It 'should not remove custom properties if parameter not provided' {
+      $app = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af'
+
+      $app.customProperties | Should -HaveCount 1
+
+      Assert-VerifiableMock
     }
   }
 }
