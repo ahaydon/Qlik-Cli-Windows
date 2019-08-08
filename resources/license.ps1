@@ -4,6 +4,26 @@ function Get-QlikAccessTypeInfo {
   }
 }
 
+function Get-QlikAnalyzerAccess {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0)]
+    [string]$id,
+    [string]$filter,
+    [switch]$full,
+    [switch]$raw
+  )
+
+  PROCESS {
+    $path = "/qrs/license/analyzerAccessType"
+    If( $id ) { $path += "/$id" }
+    If( $full ) { $path += "/full" }
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
+  }
+}
+Set-Alias -Name Get-QlikAnalyserAccess -Value Get-QlikAnalyzerAccess
+
 function Get-QlikLicense {
   PROCESS {
     return Invoke-QlikGet "/qrs/license"
@@ -65,6 +85,25 @@ function Get-QlikLoginAccess {
   }
 }
 
+function Get-ProfessionalAccessType {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0)]
+    [string]$id,
+    [string]$filter,
+    [switch]$full,
+    [switch]$raw
+  )
+
+  PROCESS {
+    $path = "/qrs/license/professionalaccesstype"
+    If( $id ) { $path += "/$id" }
+    If( $full ) { $path += "/full" }
+    If( $raw ) { $rawOutput = $true }
+    return Invoke-QlikGet $path $filter
+  }
+}
+
 function Get-QlikUserAccessType {
   [CmdletBinding()]
   param (
@@ -84,6 +123,21 @@ function Get-QlikUserAccessType {
   }
 }
 
+function New-QlikProfessionalAccessGroup {
+  [CmdletBinding()]
+  param (
+    [string]$name
+  )
+
+  PROCESS {
+    $json = (@{
+      name=$name
+    } | ConvertTo-Json -Compress -Depth 10)
+
+    return Invoke-QlikPost "/qrs/License/ProfessionalAccessGroup" $json
+  }
+}
+
 function New-QlikUserAccessGroup {
   [CmdletBinding()]
   param (
@@ -96,6 +150,18 @@ function New-QlikUserAccessGroup {
     } | ConvertTo-Json -Compress -Depth 10)
 
     return Invoke-QlikPost "/qrs/License/UserAccessGroup" $json
+  }
+}
+
+function Remove-QlikProfessionalAccessType {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id
+  )
+
+  PROCESS {
+    return Invoke-QlikDelete -path "/qrs/license/professionalaccesstype/$id"
   }
 }
 
