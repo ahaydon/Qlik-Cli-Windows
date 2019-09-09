@@ -70,7 +70,7 @@ function Update-QlikCustomProperty {
     $prop = Get-QlikCustomProperty $id -raw
     if( $name ) { $prop.name = $name }
     if( $valueType ) { $prop.valueType = $valueType }
-    if( $choiceValues ) { $prop.choiceValues = $choiceValues }
+    if( $choiceValues -is [array]) { $prop.choiceValues = $choiceValues }
     if( $objectTypes ) { $prop.objectTypes = $objectTypes }
     $json = $prop | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/custompropertydefinition/$id" $json
