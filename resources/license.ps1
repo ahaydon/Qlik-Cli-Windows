@@ -4,7 +4,7 @@ function Get-QlikAccessTypeInfo {
   }
 }
 
-function Get-QlikAnalyzerAccess {
+function Get-QlikAnalyzerAccessType {
   [CmdletBinding()]
   param (
     [parameter(Position=0)]
@@ -22,7 +22,7 @@ function Get-QlikAnalyzerAccess {
     return Invoke-QlikGet $path $filter
   }
 }
-Set-Alias -Name Get-QlikAnalyserAccess -Value Get-QlikAnalyzerAccess
+Set-Alias -Name Get-QlikAnalyserAccessType -Value Get-QlikAnalyzerAccessType
 
 function Get-QlikLicense {
   PROCESS {
@@ -66,7 +66,7 @@ function Get-QlikLicenseAudit {
   }
 }
 
-function Get-QlikLoginAccess {
+function Get-QlikLoginAccessType {
   [CmdletBinding()]
   param (
     [parameter(Position=0)]
@@ -85,7 +85,7 @@ function Get-QlikLoginAccess {
   }
 }
 
-function Get-ProfessionalAccessType {
+function Get-QlikProfessionalAccessType {
   [CmdletBinding()]
   param (
     [parameter(Position=0)]
@@ -152,6 +152,19 @@ function New-QlikUserAccessGroup {
     return Invoke-QlikPost "/qrs/License/UserAccessGroup" $json
   }
 }
+
+function Remove-QlikAnalyzerAccessType {
+  [CmdletBinding()]
+  param (
+    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
+    [string]$id
+  )
+
+  PROCESS {
+    return Invoke-QlikDelete -path "/qrs/license/analyzeraccesstype/$id"
+  }
+}
+Set-Alias -Name Remove-QlikAnalyserAccessType -Value Remove-QlikAnalyzerAccessType
 
 function Remove-QlikProfessionalAccessType {
   [CmdletBinding()]
