@@ -77,7 +77,9 @@ function Import-QlikApp {
     [parameter(Position=1)]
     [string]$name,
 
-    [switch]$upload
+    [switch]$upload,
+    [switch]$nodata,
+    [switch]$excludeconnections
   )
 
   PROCESS {
@@ -88,6 +90,9 @@ function Import-QlikApp {
     }
     $appName = [System.Web.HttpUtility]::UrlEncode($appName)
     $path = "/qrs/app/{0}?name=$appName"
+    if ($nodata -eq $True) { $path = $path + "&keepdata=false" }
+    if ($excludeconnections -eq $True) { $path = $path + "&excludeconnections=true" }
+
     If( $upload ) {
       $path = $path -f 'upload'
       return Invoke-QlikUpload $path $file
