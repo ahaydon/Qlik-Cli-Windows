@@ -1,3 +1,39 @@
+function Get-QlikAuditRule {
+  [CmdletBinding()]
+  param (
+    [parameter(Mandatory=$true)]
+    [string]$resourceType,
+
+    [string]$resourceFilter,
+    [string]$userFilter,
+    [string[]]$environmentAttributes,
+    [int]$userSkip,
+    [int]$userTake,
+    [int]$resourceSkip,
+    [int]$resourceTake,
+    [switch]$includeNonGrantingRules
+  )
+
+  process {
+    $audit = @{
+      resourceType = $resourceType
+      resourceFilter = $resourceFilter
+      userFilter = $userFilter
+      environmentAttributes = $environmentAttributes
+      userSkip = $userSkip
+      userTake = $userTake
+      resourceSkip = $resourceSkip
+      resourceTake = $resourceTake
+      includeNonGrantingRules = $includeNonGrantingRules.IsPresent
+    }
+
+    $path = '/qrs/systemrule/security/audit'
+    $json = $audit | ConvertTo-Json -Compress -Depth 10
+
+    return Invoke-QlikPost $path $json
+  }
+}
+
 function Get-QlikRule {
   [CmdletBinding()]
   param (
