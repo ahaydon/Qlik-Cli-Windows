@@ -22,8 +22,13 @@ function Connect-Qlik {
     [Parameter(ParameterSetName = "Certificate")]
     [string]$Username = "$($env:userdomain)\$($env:username)",
     # Client certificate to use for authentication
-    [parameter(ParameterSetName = "Certificate", ValueFromPipeline=$true)]
+    [parameter(ParameterSetName = "Certificate", Mandatory=$true, ValueFromPipeline=$true)]
     [System.Security.Cryptography.X509Certificates.X509Certificate]$Certificate,
+    [parameter(ParameterSetName = "Certificate")]
+    [ValidateSet('AppAccess', 'ManagementAccess')]
+    [string]$Context = 'ManagementAccess',
+    [parameter(ParameterSetName = "Certificate")]
+    [hashtable]$Attributes,
     # Use credentials of logged on user for authentication, prevents automatically locating a certificate
     [parameter(ParameterSetName = "Default")]
     [switch]$UseDefaultCredentials
@@ -67,7 +72,10 @@ function Connect-Qlik {
 
       $Script:api_params = @{
         Certificate=$Certificate
-        Header=@{"X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))}
+        Header=@{
+          "X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))
+          "X-Qlik-Security" = "Context=$Context; " -f ($Attributes.ForEach{"$_=$($Attributes.$_)"} -join '; ')
+        }
       }
       $port = ":4242"
     } ElseIf( $Credential ) {
