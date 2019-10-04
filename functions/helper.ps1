@@ -43,7 +43,7 @@ function FormatOutput($objects, $schemaPath) {
 function GetCustomProperties($customProperties) {
   $prop = @(
     $customProperties | Where-Object {$_} | ForEach-Object {
-      $val = $_ -Split "="
+      $val = $_.Split("=",2)
       $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
       @{
         value = ($p.choiceValues -eq $val[1])[0]
