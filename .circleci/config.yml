@@ -73,11 +73,11 @@ workflows:
   test-and-deploy:
     jobs:
       - test:
-        filters:
-          branches:
-            ignore: gh-pages
-          tags:
-            only: /^v\d+\.\d+\.\d+/
+          filters:
+            branches:
+              ignore: gh-pages
+            tags:
+              only: /^v\d+\.\d+\.\d+/
       - publish-powershell-gallery:
           requires:
             - test
