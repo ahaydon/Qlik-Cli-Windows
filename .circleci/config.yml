@@ -75,9 +75,11 @@ workflows:
       - test:
           filters:
             branches:
-              ignore: gh-pages
+              ignore:
+                - gh-pages
+                - ci
             tags:
-              only: /^v\d+\.\d+\.\d+/
+              only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
           requires:
             - test
@@ -93,4 +95,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^v\d+\.\d+\.\d+/
+              only: /^v\d+\.\d+\.\d+.*/
