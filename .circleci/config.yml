@@ -18,25 +18,18 @@ jobs:
           paths:
             - ./*
 
-  pre-release-checks:
-    docker:
-      - image: microsoft/powershell:ubuntu-16.04
-        command: pwsh
-    steps:
-      - checkout
-      - run:
-          name: Pre-release checks
-          command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
-
   publish-powershell-gallery:
     docker:
       - image: microsoft/powershell:ubuntu-16.04
         command: pwsh
     steps:
+      - run:
+          name: Install .Net Core SDK and Git
+          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4 git
       - checkout
       - run:
-          name: Install .Net Core SDK
-          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
+          name: Pre-release checks
+          command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
       - run:
           name: Publish module to PowerShell Gallery
           command: |
@@ -74,21 +67,15 @@ workflows:
           filters:
             branches:
               ignore: gh-pages
-      - pre-release-checks:
-          requires:
-            - test
-          filters:
-            branches:
-              only: testing
       - publish-powershell-gallery:
           requires:
             - test
           filters:
-            branches:
-              only: master
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
       - publish-github-release:
           requires:
             - test
           filters:
-            branches:
-              only: master
+            tags:
+              only: /^v\d+\.\d+\.\d+/
