@@ -18,25 +18,27 @@ jobs:
           paths:
             - ./*
 
-  pre-release-checks:
-    docker:
-      - image: microsoft/powershell:ubuntu-16.04
-        command: pwsh
-    steps:
-      - checkout
-      - run:
-          name: Pre-release checks
-          command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
-
   publish-powershell-gallery:
     docker:
       - image: microsoft/powershell:ubuntu-16.04
-        command: pwsh
     steps:
+      - run:
+          name: Install .Net Core SDK and Git
+          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4 git
       - checkout
       - run:
-          name: Install .Net Core SDK
-          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4
+          name: Update manifest version
+          shell: pwsh
+          command: |
+            Import-Module ./Qlik-Cli.psd1
+            $functions = (Get-Module -Name Qlik-Cli).ExportedFunctions
+            Update-ModuleManifest `
+              -Path ./Qlik-Cli.psd1 `
+              -ModuleVersion $env:CIRCLE_TAG.Substring(1)`
+              -FunctionsToExport $functions
+      - run:
+          name: Pre-release checks
+          command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
       - run:
           name: Publish module to PowerShell Gallery
           command: |
@@ -58,12 +60,12 @@ jobs:
       - run:
           name: Publish release on GitHub
           command: |
-            VERSION=$(cat /output/workspace/version)
             ghr -t ${GITHUB_TOKEN} \
                 -u ${CIRCLE_PROJECT_USERNAME} \
                 -r ${CIRCLE_PROJECT_REPONAME} \
                 -c ${CIRCLE_SHA1} \
-                ${VERSION} \
+                -replace \
+                ${CIRCLE_TAG} \
                 /output/workspace/Qlik-Cli.psm1
 
 workflows:
@@ -73,22 +75,25 @@ workflows:
       - test:
           filters:
             branches:
-              ignore: gh-pages
-      - pre-release-checks:
-          requires:
-            - test
-          filters:
-            branches:
-              only: testing
+              ignore:
+                - gh-pages
+                - ci
+                - master
+            tags:
+              only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
           requires:
             - test
           filters:
             branches:
-              only: master
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
       - publish-github-release:
           requires:
             - test
           filters:
             branches:
-              only: master
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+.*/
