@@ -139,7 +139,7 @@ function New-QlikVirtualProxy {
     [String]$additionalResponseHeaders = "",
 
     [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
-    [String]$authenticationMethod="ticket",
+    [String]$authenticationMethod="Ticket",
 
     [String]$samlMetadataIdP="",
 
