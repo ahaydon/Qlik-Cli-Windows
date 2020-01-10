@@ -11,7 +11,7 @@ function Connect-Qlik {
 .LINK
   https://github.com/ahaydon/Qlik-Cli
 #>
-  [CmdletBinding(DefaultParameterSetName="Certificate")]
+  [CmdletBinding(DefaultParameterSetName="Default")]
   param (
     # Name of the Sense server to connect to
     [parameter(Position=0)]
