@@ -189,36 +189,91 @@ function Remove-QlikUserAccessType {
   }
 }
 
-function Set-QlikLicense {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$true,Position=0)]
-    [string]$serial,
-
-    [parameter(Mandatory=$true,Position=1)]
-    [string]$control,
-
-    [parameter(Mandatory=$true,Position=2)]
-    [string]$name,
-
-    [parameter(Mandatory=$true,Position=3)]
-    [alias("org")]
-    [string]$organization,
-
-    [parameter(Mandatory=$false,Position=4)]
-    [string]$lef
-  )
-
-  PROCESS {
-    $resource = "/qrs/license?control=$control"
-    $json = @{
-      serial = $serial;
-      name = $name;
-      organization = $organization;
-      lef = $lef;
-    } | ConvertTo-Json
-    Invoke-QlikPost $resource $json
-
-    return $result
-  }
+function Set-QlikLicense
+{
+	[CmdletBinding(DefaultParameterSetName = 'Serial')]
+	param
+	(
+		[Parameter(ParameterSetName = 'Serial',
+				   Mandatory = $true,
+				   Position = 0)]
+		[string]$serial,
+		[Parameter(ParameterSetName = 'Serial',
+				   Mandatory = $true,
+				   Position = 1)]
+		[string]$control,
+		[Parameter(ParameterSetName = 'Key',
+				   Mandatory = $true,
+				   Position = 0)]
+		[string]$key,
+		[Parameter(Mandatory = $true,
+				   Position = 2)]
+		[string]$name,
+		[Parameter(Mandatory = $true,
+				   Position = 3)]
+		[Alias('org')]
+		[string]$organization,
+		[Parameter(ParameterSetName = 'Serial',
+				   Mandatory = $false,
+				   Position = 4)]
+		[string]$lef
+	)
+	
+	PROCESS
+	{
+		Write-Verbose "Type: $($PSCmdlet.ParameterSetName)"
+		$BaseURL = "/qrs/license"
+		$CurrentQlikLicense = Invoke-QlikGet $BaseURL
+		
+		#Create the License Object we will pass to the API
+		$QlikLicense = @{
+			name		 = $name;
+			organization = $organization;
+		}
+		
+		if ($CurrentQlikLicense -eq "null")
+		{
+			Write-Verbose "QlikLicense = Null"
+			$Process = "Post"
+		}
+		else
+		{
+			Write-Verbose "QlikLicense != Null"
+      $Process = "Put"
+      #Check for Key -> Serial downgrade
+      if ($CurrentQlikLicense.key -ne "" -and $PSCmdlet.ParameterSetName -eq "Serial") { $Process = "downgrade" }
+      
+			#Update the License object with the Current License ID
+			$QlikLicense.id = $CurrentQlikLicense.id
+			$QlikLicense.modifiedDate = get-Date -UFormat '+%Y-%m-%dT%H:%M:%S.000Z'
+			$BaseURL = "$($BaseURL)/$($CurrentQlikLicense.id)"
+		}
+		
+		switch ($PSCmdlet.ParameterSetName)
+		{
+			Key{
+				$resourceURL = $BaseURL
+				$QlikLicense.key = $key;
+			}
+			Serial{
+				$resourceURL = "$($BaseURL)?control=$control"
+				$QlikLicense.serial = $serial;
+				$QlikLicense.lef = $lef;
+				
+			}
+		}
+		$json = $QlikLicense | ConvertTo-Json -Depth 10
+		
+		switch ($Process)
+		{
+			Post{ $result = Invoke-QlikPost $resourceURL $json }
+			Put{ $result = Invoke-QlikPut $resourceURL $json }
+			Downgrade{ Write-Warning -Message "Qlik Sense APIs do NOT have a supported method for downgrading from a Signed License"; }
+			Default{ }
+		}
+	}
+	END
+	{
+		return $result
+	}
 }
