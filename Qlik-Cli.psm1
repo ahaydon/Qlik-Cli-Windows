@@ -22,7 +22,7 @@ function Connect-Qlik {
     [Parameter(ParameterSetName = "Certificate")]
     [string]$Username = "$($env:userdomain)\$($env:username)",
     # Client certificate to use for authentication
-    [parameter(ParameterSetName = "Certificate", Mandatory=$true, ValueFromPipeline=$true)]
+    [parameter(ParameterSetName = "Certificate", ValueFromPipeline=$true)]
     [System.Security.Cryptography.X509Certificates.X509Certificate]$Certificate,
     [parameter(ParameterSetName = "Certificate")]
     [ValidateSet('AppAccess', 'ManagementAccess')]
