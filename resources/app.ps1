@@ -208,7 +208,8 @@ function Update-QlikApp {
     [object]$owner,
     [string]$ownername,
     [string]$ownerId,
-    [string]$ownerDirectory
+    [string]$ownerDirectory,
+    [object]$stream
   )
 
   PROCESS {
@@ -229,7 +230,8 @@ function Update-QlikApp {
       $app.owner = $prop
     }
     if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
-
+    if ($PSBoundParameters.ContainsKey("stream")) { $app.stream = $stream }
+    
     $json = $app | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/app/$id" $json
   }
