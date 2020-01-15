@@ -84,3 +84,25 @@ function Remove-QlikContentLibrary {
     return Invoke-QlikDelete "/qrs/contentlibrary/$id"
   }
 }
+
+function Update-QlikContentLibrary {
+  [CmdletBinding()]
+  param (
+      [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
+      [string]$id,
+
+      [object]$owner,
+      [string[]]$customProperties,
+      [string[]]$tags
+  )
+
+  PROCESS {
+      $lib = Get-QlikContentLibrary $id -raw
+      if ($PSBoundParameters.ContainsKey("customProperties")) { $lib.customProperties = @(GetCustomProperties $customProperties) }
+      if ($PSBoundParameters.ContainsKey("tags")) { $lib.tags = @(GetTags $tags) }
+      if ($PSBoundParameters.ContainsKey("owner")) { $lib.owner = GetUser $owner }
+
+      $json = $lib | ConvertTo-Json -Compress -Depth 10
+      return Invoke-QlikPut "/qrs/contentlibrary/$id" $json
+  }
+}
