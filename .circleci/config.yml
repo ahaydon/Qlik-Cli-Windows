@@ -77,8 +77,6 @@ workflows:
             branches:
               ignore:
                 - gh-pages
-                - ci
-                - master
             tags:
               only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
