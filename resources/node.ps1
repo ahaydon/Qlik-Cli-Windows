@@ -163,11 +163,17 @@ function Update-QlikNode {
     }
     if ($PSBoundParameters.ContainsKey("customProperties")) { $node.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $node.tags = @(GetTags $tags) }
+    If( $psBoundParameters.ContainsKey("failoverCandidate") ) {
+      $node.failoverCandidate = $failoverCandidate.IsPresent
+      $node.engineEnabled = $true
+      $node.proxyEnabled = $true
+      $node.schedulerEnabled = $true
+      $node.printingEnabled = $true
+    }
     If( $psBoundParameters.ContainsKey("engineEnabled") ) { $node.engineEnabled = $engineEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $node.schedulerEnabled = $schedulerEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("printingEnabled") ) { $node.printingEnabled = $printingEnabled.IsPresent }
-    If( $psBoundParameters.ContainsKey("failoverCandidate") ) { $node.failoverCandidate = $failoverCandidate.IsPresent }
     $json = $node | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/servernodeconfiguration/$id" $json
   }

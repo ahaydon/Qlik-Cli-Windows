@@ -128,6 +128,38 @@ Describe "Update-QlikNode" {
 
       Assert-MockCalled Get-QlikNode -ParameterFilter { $id -eq 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' }
     }
+
+    It 'should enable all services by default when failoverCandidate is provided' {
+      $node = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' `
+        -failoverCandidate
+
+      $node.engineEnabled | Should Be $true
+      $node.printingEnabled | Should Be $true
+      $node.proxyEnabled | Should Be $true
+      $node.schedulerEnabled | Should Be $true
+      $node.failoverCandidate | Should Be $true
+
+      Assert-MockCalled Get-QlikNode -ParameterFilter { $id -eq 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' }
+    }
+
+    It 'should allow disabling services even if failoverCandidate is provided' {
+      $node = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' `
+        -engineEnabled:$false `
+        -printingEnabled:$false `
+        -proxyEnabled:$false `
+        -schedulerEnabled:$false `
+        -failoverCandidate
+
+      $node.engineEnabled | Should Be $false
+      $node.printingEnabled | Should Be $false
+      $node.proxyEnabled | Should Be $false
+      $node.schedulerEnabled | Should Be $false
+      $node.failoverCandidate | Should Be $true
+
+      Assert-MockCalled Get-QlikNode -ParameterFilter { $id -eq 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' }
+    }
   }
 
   Context 'tag' {
