@@ -66,7 +66,7 @@ function Update-QlikExtension {
 
   PROCESS {
     $ext = Get-QlikExtension -raw -id $id
-    if ($PSBoundParameters.ContainsKey("customProperties")) { $app.customProperties = @(GetCustomProperties $customProperties) }
+    if ($PSBoundParameters.ContainsKey("customProperties")) { $ext.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $ext.tags = @(GetTags $tags) }
     if ($PSBoundParameters.ContainsKey("owner")) { $ext.owner = GetUser $owner }
 
