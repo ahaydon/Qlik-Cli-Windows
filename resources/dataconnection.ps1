@@ -56,7 +56,7 @@ function New-QlikDataConnection {
 
     if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
-    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
+    if ($PSBoundParameters.ContainsKey("owner")) { $qdc.owner = GetUser $owner }
 
     $json = $qdc | ConvertTo-Json -Compress -Depth 10
 
@@ -103,7 +103,7 @@ function Update-QlikDataConnection {
     }
     if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
-    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
+    if ($PSBoundParameters.ContainsKey("owner")) { $qdc.owner = GetUser $owner }
 
     $json = $qdc | ConvertTo-Json -Compress -Depth 10
     return Invoke-QlikPut "/qrs/dataconnection/$id" $json
