@@ -31,7 +31,7 @@ jobs:
           shell: pwsh
           command: |
             Import-Module ./Qlik-Cli.psd1
-            $functions = (Get-Module -Name Qlik-Cli).ExportedFunctions
+            $functions = (Get-Module -Name Qlik-Cli).ExportedFunctions.Keys
             Update-ModuleManifest `
               -Path ./Qlik-Cli.psd1 `
               -ModuleVersion $env:CIRCLE_TAG.Substring(1)`
