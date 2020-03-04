@@ -53,21 +53,20 @@ function New-QlikNode {
         hostName=$hostname;
       }
     }
-    If ($engineEnabled) {
-      $conf.configuration.engineEnabled = $engineEnabled.IsPresent;
+    If( $psBoundParameters.ContainsKey("failoverCandidate") ) {
+      $conf.configuration.failoverCandidate = $failoverCandidate.IsPresent
+      if ($failoverCandidate.IsPresent) {
+        $conf.configuration.engineEnabled = $true
+        $conf.configuration.proxyEnabled = $true
+        $conf.configuration.schedulerEnabled = $true
+        $conf.configuration.printingEnabled = $true
+      }
     }
-    If ($proxyEnabled) {
-      $conf.configuration.proxyEnabled = $proxyEnabled.IsPresent;
-    }
-    If ($schedulerEnabled) {
-      $conf.configuration.schedulerEnabled = $schedulerEnabled.IsPresent;
-    }
-    If ($printingEnabled) {
-      $conf.configuration.printingEnabled = $printingEnabled.IsPresent;
-    }
-    If ($failoverCandidate) {
-      $conf.configuration.failoverCandidate = $failoverCandidate.IsPresent;
-    }
+    If( $psBoundParameters.ContainsKey("engineEnabled") ) { $conf.configuration.engineEnabled = $engineEnabled.IsPresent }
+    If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $conf.configuration.proxyEnabled = $proxyEnabled.IsPresent }
+    If( $psBoundParameters.ContainsKey("schedulerEnabled") ) { $conf.configuration.schedulerEnabled = $schedulerEnabled.IsPresent }
+    If( $psBoundParameters.ContainsKey("printingEnabled") ) { $conf.configuration.printingEnabled = $printingEnabled.IsPresent }
+
     If( $nodePurpose ) {
         $conf.configuration.nodePurpose = switch($nodePurpose) {
             Production { 0 }
@@ -165,10 +164,12 @@ function Update-QlikNode {
     if ($PSBoundParameters.ContainsKey("tags")) { $node.tags = @(GetTags $tags) }
     If( $psBoundParameters.ContainsKey("failoverCandidate") ) {
       $node.failoverCandidate = $failoverCandidate.IsPresent
-      $node.engineEnabled = $true
-      $node.proxyEnabled = $true
-      $node.schedulerEnabled = $true
-      $node.printingEnabled = $true
+      if ($failoverCandidate.IsPresent) {
+        $node.engineEnabled = $true
+        $node.proxyEnabled = $true
+        $node.schedulerEnabled = $true
+        $node.printingEnabled = $true
+      }
     }
     If( $psBoundParameters.ContainsKey("engineEnabled") ) { $node.engineEnabled = $engineEnabled.IsPresent }
     If( $psBoundParameters.ContainsKey("proxyEnabled") ) { $node.proxyEnabled = $proxyEnabled.IsPresent }
