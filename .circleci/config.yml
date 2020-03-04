@@ -31,11 +31,14 @@ jobs:
           shell: pwsh
           command: |
             Import-Module ./Qlik-Cli.psd1
-            $functions = (Get-Module -Name Qlik-Cli).ExportedFunctions.Keys
+            $mod = (Get-Module -Name Qlik-Cli)
+            $functions = $mod.ExportedFunctions.Keys
+            $nested = $mod.NestedModules.Path | Resolve-Path -Relative
             Update-ModuleManifest `
               -Path ./Qlik-Cli.psd1 `
-              -ModuleVersion $env:CIRCLE_TAG.Substring(1)`
-              -FunctionsToExport $functions
+              -ModuleVersion $env:CIRCLE_TAG.Substring(1) `
+              -FunctionsToExport $functions `
+              -NestedModules $nested
       - run:
           name: Pre-release checks
           command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
