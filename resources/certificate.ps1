@@ -1,4 +1,4 @@
-function Export-QlikCertificates {
+function Export-QlikCertificate {
   [CmdletBinding()]
   param (
     [parameter(Mandatory=$true,Position=0)]
@@ -23,6 +23,7 @@ function Export-QlikCertificates {
     return Invoke-QlikPost "/qrs/certificatedistribution/exportcertificates" $json
   }
 }
+Set-Alias -Name Export-QlikCertificates -Value Export-QlikCertificate
 
 function Get-QlikCertificateDistributionPath {
   [CmdletBinding()]

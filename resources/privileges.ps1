@@ -1,4 +1,4 @@
-function Assert-QlikPrivileges {
+function Assert-QlikPrivilege {
   [CmdletBinding()]
   param (
     [parameter(Mandatory=$true,Position=1,ValueFromPipeline=$true)]
@@ -17,7 +17,7 @@ function Assert-QlikPrivileges {
   }
 }
 
-function Get-QlikPrivileges {
+function Get-QlikPrivilege {
   [CmdletBinding()]
   param (
     [parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
