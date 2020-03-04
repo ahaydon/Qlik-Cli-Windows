@@ -31,7 +31,7 @@ function CallRestUri($method, $path, $extraParams) {
       $script:webSession = $webSession
     } elseif ($params.OutFile -or $params.InFile) {
       $ProgressPreference = 'SilentlyContinue'
-      $result = Invoke-WebRequest -Method $method -Uri $path @params -WebSession $script:webSession
+      $result = (Invoke-WebRequest -Method $method -Uri $path @params -WebSession $script:webSession).Content | ConvertFrom-Json
     } else {
       $result = Invoke-RestMethod -Method $method -Uri $path @params -WebSession $script:webSession
     }
