@@ -11,7 +11,7 @@ $release = Invoke-RestMethod `
   -Uri "https://api.github.com/repos/ahaydon/qlik-cli/releases/latest" `
   -Credential $credential
 
-if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -le [System.Version]$release.tag_name) {
+if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -lt [System.Version]$release.tag_name.Substring(1)) {
   Write-Error "Module version must be newer than last published version"
 }
 
