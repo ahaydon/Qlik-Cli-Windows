@@ -31,7 +31,9 @@ function Connect-Qlik {
     [hashtable]$Attributes,
     # Use credentials of logged on user for authentication, prevents automatically locating a certificate
     [parameter(ParameterSetName = "Default")]
-    [switch]$UseDefaultCredentials
+    [switch]$UseDefaultCredentials,
+
+    [int]$TimeoutSec
   )
 
   PROCESS {
@@ -93,6 +95,8 @@ function Connect-Qlik {
     if ($TrustAllCerts -and $PSVersionTable.PSVersion.Major -ge 6) {
       $Script:api_params.SkipCertificateCheck = $true
     }
+
+    if ($TimeoutSec) { $script:api_params.TimeoutSec = $TimeoutSec }
 
     if (! $Computername ) {
       $HostPath = 'C:\ProgramData\Qlik\Sense\Host.cfg'
