@@ -40,6 +40,88 @@ Describe "New-QlikNode" {
 
       Assert-VerifiableMock
     }
+
+    It 'should enable all services by default when failoverCandidate is provided' {
+      New-QlikNode `
+        -Hostname 'sense-rim.domain.com' `
+        -failoverCandidate
+
+      $node.configuration.engineEnabled | Should Be $true
+      $node.configuration.printingEnabled | Should Be $true
+      $node.configuration.proxyEnabled | Should Be $true
+      $node.configuration.schedulerEnabled | Should Be $true
+      $node.configuration.failoverCandidate | Should Be $true
+
+      Assert-VerifiableMock
+    }
+    
+    It 'should allow disabling services even if failoverCandidate is provided' {
+      New-QlikNode `
+        -Hostname 'sense-rim.domain.com' `
+        -engineEnabled:$false `
+        -printingEnabled:$false `
+        -proxyEnabled:$false `
+        -schedulerEnabled:$false `
+        -failoverCandidate
+
+      $node.configuration.engineEnabled | Should Be $false
+      $node.configuration.printingEnabled | Should Be $false
+      $node.configuration.proxyEnabled | Should Be $false
+      $node.configuration.schedulerEnabled | Should Be $false
+      $node.configuration.failoverCandidate | Should Be $true
+
+      Assert-VerifiableMock
+    }
+  }
+
+  Context 'tag' {
+    Mock Get-QlikTag {
+      return $null
+    }
+
+    It 'should be possible to remove all tags' {
+      $app = New-QlikNode `
+        -hostname 'sense-rim' `
+        -tags $null
+
+      $app.tags | Should -BeNullOrEmpty
+
+      Assert-VerifiableMock
+    }
+
+    It 'should not remove tags if parameter not provided' {
+      $app = New-QlikNode `
+        -hostname 'sense-rim'
+
+      $app.tags | Should -HaveCount 1
+
+      Assert-VerifiableMock
+    }
+  }
+
+  Context 'custom property' {
+    Mock Get-QlikCustomProperty {
+      return $null
+    }
+
+    It 'should be possible to remove all custom properties' {
+      $app = New-QlikNode `
+        -hostname 'sense-rim' `
+        -customProperties $null
+
+      $app.customProperties | Should -BeNullOrEmpty
+
+      Assert-VerifiableMock
+    }
+
+    It 'should not remove custom properties if parameter not provided' {
+      $app = New-QlikNode `
+        -hostname 'sense-rim'
+
+      $app.customProperties | Should -HaveCount 1
+
+      Assert-VerifiableMock
+    }
   }
 }
 
@@ -157,6 +239,20 @@ Describe "Update-QlikNode" {
       $node.proxyEnabled | Should Be $false
       $node.schedulerEnabled | Should Be $false
       $node.failoverCandidate | Should Be $true
+
+      Assert-MockCalled Get-QlikNode -ParameterFilter { $id -eq 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' }
+    }
+
+    It 'should not enable services by when failoverCandidate is disabled' {
+      $node = Update-QlikNode `
+        -id 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' `
+        -failoverCandidate:$false
+
+      $node.engineEnabled | Should Be $false
+      $node.printingEnabled | Should Be $false
+      $node.proxyEnabled | Should Be $false
+      $node.schedulerEnabled | Should Be $false
+      $node.failoverCandidate | Should Be $false
 
       Assert-MockCalled Get-QlikNode -ParameterFilter { $id -eq 'b55e8ac0-dc74-49a9-8ae2-acda027cc8af' }
     }

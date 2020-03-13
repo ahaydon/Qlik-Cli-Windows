@@ -5,41 +5,40 @@ function Add-QlikTrigger {
     [alias("id")]
     [string]$taskId,
     [string]$name,
+
+    [parameter(ParameterSetName = "CompositeEvent")]
     [string[]]$OnSuccess,
-    [string]$date
+    [parameter(ParameterSetName = "CompositeEvent")]
+    [string[]]$OnFail,
+
+    [parameter(ParameterSetName = "SchemaEvent")]
+    [DateTime]$startDate,
+    [parameter(ParameterSetName = "SchemaEvent")]
+    [DateTime]$expirationDate,
+    [parameter(ParameterSetName = "SchemaEvent")]
+    [string]$timeZone,
+    [parameter(ParameterSetName = "SchemaEvent")]
+    [bool]$daylightSavingTime
   )
 
   PROCESS {
-    If( $tags ) {
-      $tagArray = @(
-        $tags | ForEach-Object {
-          $p = Get-QlikTag -filter "name eq '$_'"
-          @{
-            id = $p.id
-          }
-        }
-      )
-    } else {
-      $tagArray = @();
-    }
+    # $task = Get-QlikReloadTask -id $taskId -raw
 
-    $task = Get-QlikReloadTask -id $taskId -raw
-
-    If($date) {
-      $date = Get-Date -Format yyyy-MM-ddTHH:mm:ss.000Z $date
+    If($startDate) {
+      # $date = Get-Date -Format yyyy-MM-ddTHH:mm:ss.000Z $date
       if(!$name){$name = 'Scheduled'}
       $update = @{
         schemaEvents = @(@{
           name = $name;
           enabled = $true;
           eventType = 0;
-          startDate = "$date";
-          expirationDate = "9999-12-30T23:59:59.999Z";
+          startDate = $startDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
+          expirationDate = if($expirationDate){ $expirationDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z") } else { "9999-12-30T23:59:59.999Z" };
           schemaFilterDescription = @("* * - * * * * *");
           incrementDescription = "0 0 1 0";
           incrementOption = "2";
           reloadTask = @{
-            id = $task.id
+            id = $taskId
           }
         })
       }
@@ -52,7 +51,7 @@ function Add-QlikTrigger {
             enabled=$true;
             eventType=1;
             reloadTask = @{
-              id = $task.id
+              id = $taskId
             }
             timeConstraint=@{
       			  seconds = 0;
@@ -74,6 +73,10 @@ function Add-QlikTrigger {
         )
       }
     }
+
+    if ($expirationDate) { $update.expirationDate = $expirationDate }
+    if ($timeZone) { $update.timeZone = $timeZone }
+    if ($daylightSavingTime) { $update.daylightSavingTime = $daylightSavingTime }
 
     $json = $update | ConvertTo-Json -Compress -Depth 10
 

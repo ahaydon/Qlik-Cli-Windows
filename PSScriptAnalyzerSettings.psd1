@@ -1,9 +1,5 @@
 @{
-  Severity = @('Error', 'Warning')
-  <#IncludeRules=@(
-    'PSAvoidUsingPlainTextForPassword',
-    'PSAvoidUsingConvertToSecureStringWithPlainText'
-  )#>
+  Severity = @('Error', 'Warning', 'ParseError')
   ExcludeRules = @(
     'PSUseToExportFieldsInManifest',
     'PSUseDeclaredVarsMoreThanAssignments',

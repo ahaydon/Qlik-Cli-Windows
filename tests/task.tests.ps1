@@ -5,6 +5,24 @@ Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
 
+Describe "Add-QlikTrigger" {
+  Mock Invoke-QlikPost -Verifiable {
+    return $body
+  }
+
+  Context 'Create a schedule trigger' {
+    It 'should post JSON data in correct format' {
+      $result = Add-QlikTrigger `
+        -taskid fb4068a8-c465-4018-80c2-34bd49b71fc3 `
+        -name 'My new task' `
+        -startDate "2020/01/16 18:00:00" `
+        -timeZone 'Europe/London'
+
+      $result | Should -Match '"startDate":"2020-01-16T18:00:00.000Z"'
+    }
+  }
+}
+
 Describe "New-QlikTask" {
   Mock Invoke-QlikPost -Verifiable {
     return ConvertFrom-Json $body

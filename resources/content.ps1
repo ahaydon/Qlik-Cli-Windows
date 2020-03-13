@@ -65,7 +65,7 @@ function New-QlikContentLibrary {
 
     if ($PSBoundParameters.ContainsKey("customProperties")) { $lib.customProperties = @(GetCustomProperties $customProperties) }
     if ($PSBoundParameters.ContainsKey("tags")) { $lib.tags = @(GetTags $tags) }
-    if ($PSBoundParameters.ContainsKey("owner")) { $app.owner = GetUser $owner }
+    if ($PSBoundParameters.ContainsKey("owner")) { $lib.owner = GetUser $owner }
 
     $json = $lib | ConvertTo-Json -Compress -Depth 10
 

@@ -32,5 +32,16 @@ Describe "Import-QlikExtension" {
 
       Assert-VerifiableMock
     }
+
+    It 'should not warn if no password is provided' {
+      $result = Import-QlikExtension `
+        -ExtensionPath 'test.qvf' `
+        -WarningVariable LastWarning `
+        -WarningAction SilentlyContinue
+
+      $LastWarning | Should Be $null
+
+      Assert-VerifiableMock
+    }
   }
 }
