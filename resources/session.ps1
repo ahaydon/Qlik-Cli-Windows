@@ -30,7 +30,7 @@
 	.NOTES
 		Additional information about the Session API can be found
 		https://help.qlik.com/en-US/sense-developer/November2018/apis/ProxyAPI/OpenAPI_Main.generated.html#19b1cf4a56294022A146C978a46f3a59
-		https://help.qlik.com/en-US/sense-developer/November2018/Subsystems/ProxyServiceAPI/Content/Sense_ProxyServiceAPI/ProxyServiceAPI-Session-Module-API-Session-Get.htm
+		https://help.qlik.com/en-US/sense-developer/November2018/Subsystems/ProxyServiceAPI/Content/Sense_ProxyServiceAPI/ProxyServiceAPI-Session-Module-API-Session-Delete.htm
 
 #>
 function Get-QlikSession
