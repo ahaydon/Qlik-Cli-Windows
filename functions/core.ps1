@@ -44,7 +44,10 @@ function CallRestUri($method, $path, $extraParams)
 		{
 			$paramInvokeRestMethod.SessionVariable = 'webSession'
 		}
-		if ($params.OutFile -or $params.InFile) { $ProgressPreference = 'SilentlyContinue' }
+		if ($params.OutFile -or $params.InFile) { 
+			$ProgressPreference = 'SilentlyContinue'
+			$paramInvokeRestMethod.TimeoutSec = 300
+		}
 		
 		$result = Invoke-RestMethod @paramInvokeRestMethod @params
 	}
