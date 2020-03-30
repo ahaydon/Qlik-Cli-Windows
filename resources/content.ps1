@@ -47,6 +47,51 @@ function Import-QlikContent {
   }
 }
 
+function Download-QlikContent
+{
+	param
+	(
+		[Parameter(ParameterSetName = 'App',
+				   Mandatory = $true)]
+		[string]$AppID,
+		[Parameter(ParameterSetName = 'Library',
+				   Mandatory = $true)]
+		[string]$LibraryName,
+		[string]$SourceFile,
+		[Parameter(Mandatory = $true)]
+		[System.IO.DirectoryInfo]$OutPath
+	)
+	
+	switch ($PsCmdlet.ParameterSetName)
+	{
+		'App' {
+			$Path = "/qrs/app/content/full"
+			$filter = "app.id eq $AppID"
+		}
+		'Library' {
+			$Path = "/qrs/contentlibrary/full"
+			$filter = "name eq '$LibraryName'"
+		}
+	}
+	$QCF = Invoke-QlikGet $Path -filter $filter
+	
+	if ($PSBoundParameters.ContainsKey("SourceFile"))
+	{
+		$QCSREF = $QCF.references.logicalPath | ?{ ($_ -split "/")[-1] -eq "$SourceFile" }
+	}
+	else
+	{
+		$QCSREF = $QCF.references.logicalPath
+	}
+	
+	$QCSREF | %{
+		$FileName = $([System.IO.FileInfo]$_).name
+		$OutputFile = "$($OutPath.FullName.TrimEnd("\"))\$($FileName)"
+		Invoke-QlikDownload -path "$_" -filename $OutputFile
+		return $OutputFile
+	}
+}
+
 function New-QlikContentLibrary {
   [CmdletBinding()]
   param (
