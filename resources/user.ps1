@@ -1,27 +1,45 @@
-function Get-QlikUser {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
-    [string]$id,
-    [string]$filter,
-    [switch]$full,
-    [switch]$raw
-  )
-
-  PROCESS {
-    $path = "/qrs/user"
-    If( $id ) { $path += "/$id" }
-    If( $full ) { $path += "/full" }
-    If( $raw ) { $rawOutput = $true }
-    $result = Invoke-QlikGet $path $filter
-    if( $raw -Or $full ) {
-      return $result
-    } else {
-      $properties = @('name','userDirectory','userId','id')
-      #if( $full ) { $properties += @('roles','inactive','blacklisted','removedExternally') }
-      return $result | Select-Object -Property $properties
-    }
-  }
+function Get-QlikUser
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(ParameterSetName = 'ID',
+				   Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   Position = 0)]
+		[string]$id,
+		[string]$filter,
+		[Parameter(ParameterSetName = 'Full')]
+		[switch]$full,
+		[switch]$raw
+	)
+	
+	BEGIN
+	{
+		$path = "/qrs/user"
+		$properties = @('name', 'userDirectory', 'userId', 'id')
+	}
+	PROCESS
+	{
+		$CurrentPath = $path
+		If ($PSBoundParameters.ContainsKey("ID")) { $CurrentPath += "/$id" }
+		If ($full -eq $true) { $CurrentPath += "/full" }
+		If ($raw -eq $true) { $rawOutput = $true }
+		$paramInvokeQlikGet = @{
+			path   = $CurrentPath
+			filter = $filter
+		}
+		$result = Invoke-QlikGet @paramInvokeQlikGet
+		if (($full -eq $true) -Or ($full -eq $true) -Or $PSBoundParameters.ContainsKey("ID"))
+		{
+			return $result
+		}
+		else
+		{
+			return $result | Select-Object -Property $properties
+		}
+	}
 }
 
 function New-QlikUser {
