@@ -46,7 +46,9 @@ function CallRestUri($method, $path, $extraParams)
 		}
 		if ($params.OutFile -or $params.InFile) { 
 			$ProgressPreference = 'SilentlyContinue'
-			$paramInvokeRestMethod.TimeoutSec = 300
+            if ($null -eq $params.TimeoutSec){
+			    $paramInvokeRestMethod.TimeoutSec = 300
+            }
 		}
 		
 		$result = Invoke-RestMethod @paramInvokeRestMethod @params
