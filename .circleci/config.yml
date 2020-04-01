@@ -118,7 +118,7 @@ workflows:
               only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
           requires:
-            - test
+            - test-unit
           filters:
             branches:
               ignore: /.*/
@@ -126,7 +126,7 @@ workflows:
               only: /^v\d+\.\d+\.\d+$/
       - publish-github-release:
           requires:
-            - test
+            - test-unit
           filters:
             branches:
               ignore: /.*/
