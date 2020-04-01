@@ -1,467 +1,468 @@
-function Add-QlikProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$true,Position=0)]
-    [string]$ProxyId,
+﻿function Add-QlikProxy {
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, Position = 0)]
+        [string]$ProxyId,
 
-    [parameter(Mandatory=$true,Position=1)]
-    [string]$VirtualProxyId
-  )
+        [parameter(Mandatory = $true, Position = 1)]
+        [string]$VirtualProxyId
+    )
 
-  PROCESS {
-    $proxy = Get-QlikProxy -raw $ProxyId
-    $vp = Get-QlikVirtualProxy -raw $VirtualProxyId
+    PROCESS {
+        $proxy = Get-QlikProxy -raw $ProxyId
+        $vp = Get-QlikVirtualProxy -raw $VirtualProxyId
 
-    $proxy.settings.virtualProxies += $vp
-    $json = $proxy | ConvertTo-Json -Compress -Depth 10
-    return Invoke-QlikPut "/qrs/proxyservice/$ProxyId" $json
-  }
+        $proxy.settings.virtualProxies += $vp
+        $json = $proxy | ConvertTo-Json -Compress -Depth 10
+        return Invoke-QlikPut "/qrs/proxyservice/$ProxyId" $json
+    }
 }
 
 function Add-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
-    [string]$id,
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelinebyPropertyName = $True, Position = 0)]
+        [string]$id,
 
-    [alias("engine")]
-    [string[]]$loadBalancingServerNodes,
-    [alias("wsorigin")]
-    [string[]]$websocketCrossOriginWhiteList
-  )
+        [alias("engine")]
+        [string[]]$loadBalancingServerNodes,
+        [alias("wsorigin")]
+        [string[]]$websocketCrossOriginWhiteList
+    )
 
-  PROCESS {
-    $proxy = Get-QlikVirtualProxy -raw $id
-    $params = $psBoundParameters
-    If( $params.ContainsKey("loadBalancingServerNodes") )
-    {
-      $params["loadBalancingServerNodes"] = @( $proxy.loadBalancingServerNodes | ForEach-Object { $_.id } ) + $loadBalancingServerNodes
+    PROCESS {
+        $proxy = Get-QlikVirtualProxy -raw $id
+        $params = $psBoundParameters
+        If ( $params.ContainsKey("loadBalancingServerNodes") ) {
+            $params["loadBalancingServerNodes"] = @( $proxy.loadBalancingServerNodes | ForEach-Object { $_.id } ) + $loadBalancingServerNodes
+        }
+        If ( $params.ContainsKey("websocketCrossOriginWhiteList") ) {
+            $params["websocketCrossOriginWhiteList"] = $proxy.websocketCrossOriginWhiteList + $websocketCrossOriginWhiteList
+        }
+        return Update-QlikVirtualProxy @params
     }
-    If( $params.ContainsKey("websocketCrossOriginWhiteList") )
-    {
-      $params["websocketCrossOriginWhiteList"] = $proxy.websocketCrossOriginWhiteList + $websocketCrossOriginWhiteList
-    }
-    return Update-QlikVirtualProxy @params
-  }
 }
 
 function Export-QlikMetadata {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$true,ValueFromPipelinebyPropertyName=$true,Position=0)]
-    [string]$id,
-    [parameter(Position=1)]
-    [string]$filename
-  )
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipelinebyPropertyName = $true, Position = 0)]
+        [string]$id,
+        [parameter(Position = 1)]
+        [string]$filename
+    )
 
-  PROCESS {
-    Write-Verbose filename=$filename
-    If( [string]::IsNullOrEmpty($filename) ) {
-      $vp = Get-QlikVirtualProxy -id $id -raw
-      $file = "$($vp.prefix)_metadata_sp.xml"
-    } else {
-      $file = $filename
+    PROCESS {
+        Write-Verbose filename=$filename
+        If ( [string]::IsNullOrEmpty($filename) ) {
+            $vp = Get-QlikVirtualProxy -id $id -raw
+            $file = "$($vp.prefix)_metadata_sp.xml"
+        }
+        else {
+            $file = $filename
+        }
+        Write-Verbose file=$file
+        $export = (Invoke-QlikGet "/qrs/virtualproxyconfig/$id/generate/samlmetadata").value
+        $basename = $file
+        if ( $basename.IndexOf('/') -gt 0 ) {
+            $basename = $basename.SubString($basename.LastIndexOf('/') + 1)
+        }
+        if ( $basename.IndexOf('\') -gt 0 ) {
+            $basename = $basename.SubString($basename.LastIndexOf('\') + 1)
+        }
+        Invoke-QlikDownload "/qrs/download/samlmetadata/$export/$basename" $file
+        Write-Verbose "Downloaded $id to $file"
     }
-    Write-Verbose file=$file
-    $export = (Invoke-QlikGet "/qrs/virtualproxyconfig/$id/generate/samlmetadata").value
-    $basename = $file
-    if( $basename.IndexOf('/') -gt 0 ) {
-      $basename = $basename.SubString($basename.LastIndexOf('/') + 1)
-    }
-    if( $basename.IndexOf('\') -gt 0 ) {
-      $basename = $basename.SubString($basename.LastIndexOf('\') + 1)
-    }
-    Invoke-QlikDownload "/qrs/download/samlmetadata/$export/$basename" $file
-    Write-Verbose "Downloaded $id to $file"
-  }
 }
 
 function Get-QlikProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0)]
-    [string]$id,
-    [string]$filter,
-    [switch]$full,
-    [switch]$raw
-  )
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0)]
+        [string]$id,
+        [string]$filter,
+        [switch]$full,
+        [switch]$raw
+    )
 
-  PROCESS {
-    $path = "/qrs/proxyservice"
-    If( $id ) { $path += "/$id" }
-    If( $full ) { $path += "/full" }
-    If( $raw ) { $rawOutput = $true }
-    return Invoke-QlikGet $path $filter
-  }
+    PROCESS {
+        $path = "/qrs/proxyservice"
+        If ( $id ) { $path += "/$id" }
+        If ( $full ) { $path += "/full" }
+        If ( $raw ) { $rawOutput = $true }
+        return Invoke-QlikGet $path $filter
+    }
 }
 
 function Get-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0)]
-    [string]$id,
-    [string]$filter,
-    [switch]$full,
-    [switch]$raw
-  )
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0)]
+        [string]$id,
+        [string]$filter,
+        [switch]$full,
+        [switch]$raw
+    )
 
-  PROCESS {
-    $path = "/qrs/virtualproxyconfig"
-    If( $id ) { $path += "/$id" }
-    If( $full ) { $path += "/full" }
-    If( $raw ) { $rawOutput = $true }
-    return Invoke-QlikGet $path $filter
-  }
+    PROCESS {
+        $path = "/qrs/virtualproxyconfig"
+        If ( $id ) { $path += "/$id" }
+        If ( $full ) { $path += "/full" }
+        If ( $raw ) { $rawOutput = $true }
+        return Invoke-QlikGet $path $filter
+    }
 }
 
 function New-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0)]
-    [string]$prefix,
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0)]
+        [string]$prefix,
 
-    [parameter(Mandatory=$true,Position=1)]
-    [string]$description,
+        [parameter(Mandatory = $true, Position = 1)]
+        [string]$description,
 
-    [parameter(Mandatory=$true,Position=2)]
-    [alias("cookie")]
-    [string]$sessionCookieHeaderName,
+        [parameter(Mandatory = $true, Position = 2)]
+        [alias("cookie")]
+        [string]$sessionCookieHeaderName,
 
-    [alias("authUri")]
-    [string]$authenticationModuleRedirectUri,
+        [alias("authUri")]
+        [string]$authenticationModuleRedirectUri,
 
-    [alias("engine")]
-    [string[]]$loadBalancingServerNodes = "",
+        [alias("engine")]
+        [string[]]$loadBalancingServerNodes = "",
 
-    [alias("wsorigin")]
-    [string[]]$websocketCrossOriginWhiteList = "",
+        [alias("wsorigin")]
+        [string[]]$websocketCrossOriginWhiteList = "",
 
-    [String]$additionalResponseHeaders = "",
+        [String]$additionalResponseHeaders = "",
 
-    [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
-    [String]$authenticationMethod="Ticket",
+        [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static", "dynamic", "SAML", "JWT", IgnoreCase = $false)]
+        [String]$authenticationMethod = "Ticket",
 
-    [String]$samlMetadataIdP="",
+        [String]$samlMetadataIdP = "",
 
-    [String]$samlHostUri="",
+        [String]$samlHostUri = "",
 
-    [String]$samlEntityId="",
+        [String]$samlEntityId = "",
 
-    [String]$samlAttributeUserId="",
+        [String]$samlAttributeUserId = "",
 
-    [String]$samlAttributeUserDirectory="",
+        [String]$samlAttributeUserDirectory = "",
 
-    [hashtable[]]$samlAttributeMap = @(),
+        [hashtable[]]$samlAttributeMap = @(),
 
-    [switch]$samlSlo,
+        [switch]$samlSlo,
 
-    [ValidateSet("sha1","sha256")]
-    [String]$samlSigningAlgorithm="sha1",
+        [ValidateSet("sha1", "sha256")]
+        [String]$samlSigningAlgorithm = "sha1",
 
-    [String]$jwtPublicKeyCertificate = "",
+        [String]$jwtPublicKeyCertificate = "",
 
-    [String]$jwtAttributeUserId = "",
+        [String]$jwtAttributeUserId = "",
 
-    [String]$jwtAttributeUserDirectory = "",
+        [String]$jwtAttributeUserDirectory = "",
 
-    [hashtable[]]$jwtAttributeMap = @(),
+        [hashtable[]]$jwtAttributeMap = @(),
 
-    [Int]$sessionInactivityTimeout = 30
-  )
+        [Int]$sessionInactivityTimeout = 30
+    )
 
-  PROCESS {
-    If( $loadBalancingServerNodes ) {
-      $engines = @(
-        $loadBalancingServerNodes | ForEach-Object {
-          If( $_ -match $script:guid ) {
-            @{ id = $_ }
-          } else {
-            $eid = Get-QlikNode -filter "hostname eq '$_'"
-            @{ id = $eid.id }
-          }
+    PROCESS {
+        If ( $loadBalancingServerNodes ) {
+            $engines = @(
+                $loadBalancingServerNodes | ForEach-Object {
+                    If ( $_ -match $script:guid ) {
+                        @{ id = $_ }
+                    }
+                    else {
+                        $eid = Get-QlikNode -filter "hostname eq '$_'"
+                        @{ id = $eid.id }
+                    }
+                }
+            )
         }
-      )
-    } else {
-      $engines = @()
-    }
-    $authenticationMethodCode = switch ($authenticationMethod) {
-      "ticket"  { 0 }
-      "static"  { 1 }
-      "dynamic" { 2 }
-      "saml"    { 3 }
-      "jwt"     { 4 }
-      default   { $authenticationMethod }
-    }
-    $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
-      "sha1"   { 0 }
-      "sha256" { 1 }
-    }
+        else {
+            $engines = @()
+        }
+        $authenticationMethodCode = switch ($authenticationMethod) {
+            "ticket" { 0 }
+            "static" { 1 }
+            "dynamic" { 2 }
+            "saml" { 3 }
+            "jwt" { 4 }
+            default { $authenticationMethod }
+        }
+        $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
+            "sha1" { 0 }
+            "sha256" { 1 }
+        }
 
-    $json = (@{
-      prefix=$prefix;
-      description=$description;
-      authenticationModuleRedirectUri=$authenticationModuleRedirectUri;
-      loadBalancingServerNodes=$engines;
-      sessionCookieHeaderName=$sessionCookieHeaderName;
-      websocketCrossOriginWhiteList=$websocketCrossOriginWhiteList;
-      additionalResponseHeaders=$additionalResponseHeaders;
-      sessionInactivityTimeout=$sessionInactivityTimeout;
-      authenticationMethod=$authenticationMethodCode;
-      samlMetadataIdP=$samlMetadataIdP;
-      samlHostUri=$samlHostUri;
-      samlEntityId=$samlEntityId;
-      samlAttributeUserId=$samlAttributeUserId;
-      samlAttributeUserDirectory=$samlAttributeUserDirectory;
-      samlAttributeMap=$samlAttributeMap;
-      samlSlo=$samlSlo.IsPresent;
-      samlAttributeSigningAlgorithm=$samlSigningAlgorithmCode;
-      jwtPublicKeyCertificate=$jwtPublicKeyCertificate;
-      jwtAttributeUserId=$jwtAttributeUserId;
-      jwtAttributeUserDirectory=$jwtAttributeUserDirectory;
-      jwtAttributeMap=$jwtAttributeMap;
-    } | ConvertTo-Json -Compress -Depth 10)
+        $json = (@{
+                prefix = $prefix;
+                description = $description;
+                authenticationModuleRedirectUri = $authenticationModuleRedirectUri;
+                loadBalancingServerNodes = $engines;
+                sessionCookieHeaderName = $sessionCookieHeaderName;
+                websocketCrossOriginWhiteList = $websocketCrossOriginWhiteList;
+                additionalResponseHeaders = $additionalResponseHeaders;
+                sessionInactivityTimeout = $sessionInactivityTimeout;
+                authenticationMethod = $authenticationMethodCode;
+                samlMetadataIdP = $samlMetadataIdP;
+                samlHostUri = $samlHostUri;
+                samlEntityId = $samlEntityId;
+                samlAttributeUserId = $samlAttributeUserId;
+                samlAttributeUserDirectory = $samlAttributeUserDirectory;
+                samlAttributeMap = $samlAttributeMap;
+                samlSlo = $samlSlo.IsPresent;
+                samlAttributeSigningAlgorithm = $samlSigningAlgorithmCode;
+                jwtPublicKeyCertificate = $jwtPublicKeyCertificate;
+                jwtAttributeUserId = $jwtAttributeUserId;
+                jwtAttributeUserDirectory = $jwtAttributeUserDirectory;
+                jwtAttributeMap = $jwtAttributeMap;
+            } | ConvertTo-Json -Compress -Depth 10)
 
-    return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
-  }
+        return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
+    }
 }
 
 function Remove-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Position=0,ValueFromPipelinebyPropertyName=$true)]
-    [string]$id
-  )
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, ValueFromPipelinebyPropertyName = $true)]
+        [string]$id
+    )
 
-  PROCESS {
-    return Invoke-QlikDelete "/qrs/virtualproxyconfig/$id"
-  }
+    PROCESS {
+        return Invoke-QlikDelete "/qrs/virtualproxyconfig/$id"
+    }
 }
 
 function Update-QlikProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
-    [string]$id,
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelinebyPropertyName = $True, Position = 0)]
+        [string]$id,
 
-    [ValidateRange(1,65536)]
-    [Int]$ListenPort,
+        [ValidateRange(1, 65536)]
+        [Int]$ListenPort,
 
-    [Bool]$AllowHttp,
+        [Bool]$AllowHttp,
 
-    [ValidateRange(1,65536)]
-    [Int]$UnencryptedListenPort,
+        [ValidateRange(1, 65536)]
+        [Int]$UnencryptedListenPort,
 
-    [ValidateRange(1,65536)]
-    [Int]$AuthenticationListenPort,
+        [ValidateRange(1, 65536)]
+        [Int]$AuthenticationListenPort,
 
-    [Bool]$KerberosAuthentication,
+        [Bool]$KerberosAuthentication,
 
-    [ValidateRange(1,65536)]
-    [Int]$UnencryptedAuthenticationListenPort,
+        [ValidateRange(1, 65536)]
+        [Int]$UnencryptedAuthenticationListenPort,
 
-    [String]$SslBrowserCertificateThumbprint,
+        [String]$SslBrowserCertificateThumbprint,
 
-    [ValidateRange(1,300)]
-    [Int]$KeepAliveTimeoutSeconds,
+        [ValidateRange(1, 300)]
+        [Int]$KeepAliveTimeoutSeconds,
 
-    [ValidateRange(512,131072)]
-    [Int]$MaxHeaderSizeBytes,
+        [ValidateRange(512, 131072)]
+        [Int]$MaxHeaderSizeBytes,
 
-    [ValidateRange(20,1000)]
-    [Int]$MaxHeaderLines,
+        [ValidateRange(20, 1000)]
+        [Int]$MaxHeaderLines,
 
-    [ValidateRange(1,65536)]
-    [Int]$RestListenPort,
+        [ValidateRange(1, 65536)]
+        [Int]$RestListenPort,
 
-    [String[]]$customProperties,
+        [String[]]$customProperties,
 
-    [String[]]$virtualProxies
-  )
+        [String[]]$virtualProxies
+    )
 
-  PROCESS {
-    $proxy = Get-QlikProxy -raw -Id $id
-    if ($listenPort) { $proxy.settings.listenPort = $listenPort }
-    $proxy.settings.allowHttp = $allowHttp
-    if ($unencryptedListenPort) { $proxy.settings.unencryptedListenPort = $unencryptedListenPort }
-    if ($authenticationListenPort) { $proxy.settings.authenticationListenPort = $authenticationListenPort }
-    $proxy.settings.kerberosAuthentication = $kerberosAuthentication
-    if ($unencryptedAuthenticationListenPort) { $proxy.settings.unencryptedAuthenticationListenPort = $unencryptedAuthenticationListenPort }
-    if ($sslBrowserCertificateThumbprint) { $proxy.settings.sslBrowserCertificateThumbprint = $sslBrowserCertificateThumbprint }
-    if ($keepAliveTimeoutSeconds) { $proxy.settings.keepAliveTimeoutSeconds = $keepAliveTimeoutSeconds }
-    if ($maxHeaderSizeBytes) { $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes }
-    if ($maxHeaderLines) { $proxy.settings.maxHeaderLines = $maxHeaderLines }
-    if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
-    If( $customProperties ) {
-      $prop = @(
-        $customProperties | ForEach-Object {
-          $val = $_ -Split "="
-          $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
-          @{
-            value = ($p.choiceValues -eq $val[1])[0]
-            definition = $p
-          }
+    PROCESS {
+        $proxy = Get-QlikProxy -raw -Id $id
+        if ($listenPort) { $proxy.settings.listenPort = $listenPort }
+        $proxy.settings.allowHttp = $allowHttp
+        if ($unencryptedListenPort) { $proxy.settings.unencryptedListenPort = $unencryptedListenPort }
+        if ($authenticationListenPort) { $proxy.settings.authenticationListenPort = $authenticationListenPort }
+        $proxy.settings.kerberosAuthentication = $kerberosAuthentication
+        if ($unencryptedAuthenticationListenPort) { $proxy.settings.unencryptedAuthenticationListenPort = $unencryptedAuthenticationListenPort }
+        if ($sslBrowserCertificateThumbprint) { $proxy.settings.sslBrowserCertificateThumbprint = $sslBrowserCertificateThumbprint }
+        if ($keepAliveTimeoutSeconds) { $proxy.settings.keepAliveTimeoutSeconds = $keepAliveTimeoutSeconds }
+        if ($maxHeaderSizeBytes) { $proxy.settings.maxHeaderSizeBytes = $maxHeaderSizeBytes }
+        if ($maxHeaderLines) { $proxy.settings.maxHeaderLines = $maxHeaderLines }
+        if ($restListenPort) { $proxy.settings.restListenPort = $restListenPort }
+        If ( $customProperties ) {
+            $prop = @(
+                $customProperties | ForEach-Object {
+                    $val = $_ -Split "="
+                    $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+                    @{
+                        value = ($p.choiceValues -eq $val[1])[0]
+                        definition = $p
+                    }
+                }
+            )
+            $proxy.customProperties = $prop
         }
-      )
-      $proxy.customProperties = $prop
+        If ( $null -ne $virtualProxies ) {
+            $set = New-Object System.Collections.Generic.HashSet[string]
+            $virtualProxies | ForEach-Object {
+                If ( $_ -match $script:guid ) {
+                    $res = $set.Add($_)
+                }
+                elseif ($_ -ne '') {
+                    $eid = Get-QlikVirtualProxy -filter "prefix eq '$_'"
+                    If ( $eid ) {
+                        $res = $set.Add($eid.id)
+                    }
+                }
+            }
+            $proxy.settings.virtualProxies | ForEach-Object {
+                If ($_.defaultVirtualProxy) {
+                    $res = $set.Add($_.id)
+                }
+            }
+            $vProxies = @(
+                $set | ForEach-Object {
+                    @{ id = $_ }
+                }
+            )
+            $proxy.settings.virtualProxies = $vProxies
+        }
+        $json = $proxy | ConvertTo-Json -Compress -Depth 10
+        return Invoke-QlikPut "/qrs/proxyservice/$id" $json
     }
-    If( $null -ne $virtualProxies ) {
-      $set = New-Object System.Collections.Generic.HashSet[string]
-      $virtualProxies | ForEach-Object {
-        If( $_ -match $script:guid ) {
-          $res = $set.Add($_)
-        } elseif ($_ -ne '') {
-          $eid = Get-QlikVirtualProxy -filter "prefix eq '$_'"
-          If( $eid )
-          {
-            $res = $set.Add($eid.id)
-          }
-        }
-      }
-      $proxy.settings.virtualProxies | ForEach-Object {
-        If ($_.defaultVirtualProxy) {
-          $res = $set.Add($_.id)
-        }
-      }
-      $vProxies = @(
-        $set | ForEach-Object {
-          @{ id = $_ }
-        }
-      )
-      $proxy.settings.virtualProxies = $vProxies
-    }
-    $json = $proxy | ConvertTo-Json -Compress -Depth 10
-    return Invoke-QlikPut "/qrs/proxyservice/$id" $json
-  }
 }
 
 function Update-QlikVirtualProxy {
-  [CmdletBinding()]
-  param (
-    [parameter(Mandatory=$true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True,Position=0)]
-    [string]$id,
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelinebyPropertyName = $True, Position = 0)]
+        [string]$id,
 
-    [string]$prefix,
-    [string]$description,
+        [string]$prefix,
+        [string]$description,
 
-    [alias("cookie")]
-    [string]$sessionCookieHeaderName,
+        [alias("cookie")]
+        [string]$sessionCookieHeaderName,
 
-    [alias("authUri")]
-    [string]$authenticationModuleRedirectUri,
+        [alias("authUri")]
+        [string]$authenticationModuleRedirectUri,
 
-    [alias("winAuthPattern")]
-    [string]$windowsAuthenticationEnabledDevicePattern,
+        [alias("winAuthPattern")]
+        [string]$windowsAuthenticationEnabledDevicePattern,
 
-    [parameter()]
-    [alias("engine")]
-    [string[]]$loadBalancingServerNodes,
+        [parameter()]
+        [alias("engine")]
+        [string[]]$loadBalancingServerNodes,
 
-    [alias("wsorigin")]
-    [string[]]$websocketCrossOriginWhiteList,
+        [alias("wsorigin")]
+        [string[]]$websocketCrossOriginWhiteList,
 
-    [String]$additionalResponseHeaders,
+        [String]$additionalResponseHeaders,
 
-    [Int]$anonymousAccessMode,
+        [Int]$anonymousAccessMode,
 
-    [String]$magicLinkHostUri,
+        [String]$magicLinkHostUri,
 
-    [String]$magicLinkFriendlyName,
+        [String]$magicLinkFriendlyName,
 
-    [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static","dynamic","SAML","JWT", IgnoreCase=$false)]
-    [String]$authenticationMethod,
+        [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static", "dynamic", "SAML", "JWT", IgnoreCase = $false)]
+        [String]$authenticationMethod,
 
-    [String]$samlMetadataIdP,
+        [String]$samlMetadataIdP,
 
-    [String]$samlHostUri,
+        [String]$samlHostUri,
 
-    [String]$samlEntityId,
+        [String]$samlEntityId,
 
-    [String]$samlAttributeUserId,
+        [String]$samlAttributeUserId,
 
-    [String]$samlAttributeUserDirectory,
+        [String]$samlAttributeUserDirectory,
 
-    [hashtable[]]$samlAttributeMap,
+        [hashtable[]]$samlAttributeMap,
 
-    [switch]$samlSlo,
+        [switch]$samlSlo,
 
-    [ValidateSet("sha1","sha256")]
-    [String]$samlSigningAlgorithm,
+        [ValidateSet("sha1", "sha256")]
+        [String]$samlSigningAlgorithm,
 
-    [String]$jwtPublicKeyCertificate,
+        [String]$jwtPublicKeyCertificate,
 
-    [String]$jwtAttributeUserId,
+        [String]$jwtAttributeUserId,
 
-    [String]$jwtAttributeUserDirectory,
+        [String]$jwtAttributeUserDirectory,
 
-    [hashtable[]]$jwtAttributeMap,
+        [hashtable[]]$jwtAttributeMap,
 
-    [Int]$sessionInactivityTimeout,
+        [Int]$sessionInactivityTimeout,
 
-    [string[]]$customProperties,
+        [string[]]$customProperties,
 
-    [string[]]$tags
-  )
+        [string[]]$tags
+    )
 
-  PROCESS {
-    $proxy = Get-QlikVirtualProxy -raw $id
-    If( $prefix ) { $proxy.prefix = $prefix }
-    If( $description ) { $proxy.description = $description }
-    If( $sessionCookieHeaderName ) { $proxy.sessionCookieHeaderName = $sessionCookieHeaderName }
-    If( $psBoundParameters.ContainsKey("authenticationModuleRedirectUri") ) { $proxy.authenticationModuleRedirectUri = $authenticationModuleRedirectUri }
-    If( $psBoundParameters.ContainsKey("websocketCrossOriginWhiteList") ) { $proxy.websocketCrossOriginWhiteList = $websocketCrossOriginWhiteList }
-    If( $psBoundParameters.ContainsKey("additionalResponseHeaders") ) { $proxy.additionalResponseHeaders = $additionalResponseHeaders }
-    If( $psBoundParameters.ContainsKey("anonymousAccessMode") ) { $proxy.anonymousAccessMode = $anonymousAccessMode }
-    If( $psBoundParameters.ContainsKey("windowsAuthenticationEnabledDevicePattern") ) { $proxy.windowsAuthenticationEnabledDevicePattern = $windowsAuthenticationEnabledDevicePattern }
-    If( $psBoundParameters.ContainsKey("loadBalancingServerNodes") ) {
-      $engines = @(
-        $loadBalancingServerNodes | ForEach-Object {
-          If( $_ -match $script:guid ) {
-            @{ id = $_ }
-          } else {
-            $eid = Get-QlikNode -filter "hostname eq '$_'"
-            If( $eid )
-            {
-              @{ id = $eid.id }
+    PROCESS {
+        $proxy = Get-QlikVirtualProxy -raw $id
+        If ( $prefix ) { $proxy.prefix = $prefix }
+        If ( $description ) { $proxy.description = $description }
+        If ( $sessionCookieHeaderName ) { $proxy.sessionCookieHeaderName = $sessionCookieHeaderName }
+        If ( $psBoundParameters.ContainsKey("authenticationModuleRedirectUri") ) { $proxy.authenticationModuleRedirectUri = $authenticationModuleRedirectUri }
+        If ( $psBoundParameters.ContainsKey("websocketCrossOriginWhiteList") ) { $proxy.websocketCrossOriginWhiteList = $websocketCrossOriginWhiteList }
+        If ( $psBoundParameters.ContainsKey("additionalResponseHeaders") ) { $proxy.additionalResponseHeaders = $additionalResponseHeaders }
+        If ( $psBoundParameters.ContainsKey("anonymousAccessMode") ) { $proxy.anonymousAccessMode = $anonymousAccessMode }
+        If ( $psBoundParameters.ContainsKey("windowsAuthenticationEnabledDevicePattern") ) { $proxy.windowsAuthenticationEnabledDevicePattern = $windowsAuthenticationEnabledDevicePattern }
+        If ( $psBoundParameters.ContainsKey("loadBalancingServerNodes") ) {
+            $engines = @(
+                $loadBalancingServerNodes | ForEach-Object {
+                    If ( $_ -match $script:guid ) {
+                        @{ id = $_ }
+                    }
+                    else {
+                        $eid = Get-QlikNode -filter "hostname eq '$_'"
+                        If ( $eid ) {
+                            @{ id = $eid.id }
+                        }
+                    }
+                }
+            )
+            $proxy.loadBalancingServerNodes = $engines
+        }
+        If ( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
+        If ( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) { $proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
+        If ( $psBoundParameters.ContainsKey("authenticationMethod") ) {
+            $proxy.authenticationMethod = switch ($authenticationMethod) {
+                "ticket" { 0 }
+                "static" { 1 }
+                "dynamic" { 2 }
+                "saml" { 3 }
+                "jwt" { 4 }
+                default { $authenticationMethod }
             }
-          }
         }
-      )
-      $proxy.loadBalancingServerNodes = $engines
-    }
-    If( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
-    If( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) {$proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
-    If( $psBoundParameters.ContainsKey("authenticationMethod") ) {
-        $proxy.authenticationMethod = switch ($authenticationMethod) {
-          "ticket"  { 0 }
-          "static"  { 1 }
-          "dynamic" { 2 }
-          "saml"    { 3 }
-          "jwt"     { 4 }
-          default   { $authenticationMethod }
+        If ( $psBoundParameters.ContainsKey("samlMetadataIdP") ) { $proxy.samlMetadataIdP = $samlMetadataIdP }
+        If ( $psBoundParameters.ContainsKey("samlHostUri") ) { $proxy.samlHostUri = $samlHostUri }
+        If ( $psBoundParameters.ContainsKey("samlEntityId") ) { $proxy.samlEntityId = $samlEntityId }
+        If ( $psBoundParameters.ContainsKey("samlAttributeUserId") ) { $proxy.samlAttributeUserId = $samlAttributeUserId }
+        If ( $psBoundParameters.ContainsKey("samlAttributeUserDirectory") ) { $proxy.samlAttributeUserDirectory = $samlAttributeUserDirectory }
+        If ( $psBoundParameters.ContainsKey("samlAttributeMap") ) { $proxy.samlAttributeMap = $samlAttributeMap }
+        If ( $psBoundParameters.ContainsKey("samlSigningAlgorithm") ) {
+            $proxy.samlAttributeSigningAlgorithm = switch ($samlSigningAlgorithm) {
+                "sha1" { 0 }
+                "sha256" { 1 }
+            }
         }
-    }
-    If( $psBoundParameters.ContainsKey("samlMetadataIdP") ) {$proxy.samlMetadataIdP = $samlMetadataIdP }
-    If( $psBoundParameters.ContainsKey("samlHostUri") ) {$proxy.samlHostUri = $samlHostUri }
-    If( $psBoundParameters.ContainsKey("samlEntityId") ) {$proxy.samlEntityId = $samlEntityId }
-    If( $psBoundParameters.ContainsKey("samlAttributeUserId") ) {$proxy.samlAttributeUserId = $samlAttributeUserId }
-    If( $psBoundParameters.ContainsKey("samlAttributeUserDirectory") ) {$proxy.samlAttributeUserDirectory = $samlAttributeUserDirectory }
-    If( $psBoundParameters.ContainsKey("samlAttributeMap") ) {$proxy.samlAttributeMap = $samlAttributeMap }
-    If( $psBoundParameters.ContainsKey("samlSigningAlgorithm") ) {
-        $proxy.samlAttributeSigningAlgorithm = switch ($samlSigningAlgorithm) {
-          "sha1"   { 0 }
-          "sha256" { 1 }
-        }
-    }
-    If( $psBoundParameters.ContainsKey("samlSlo") ) {$proxy.samlSlo = $samlSlo.IsPresent }
-    If( $psBoundParameters.ContainsKey("jwtPublicKeyCertificate") ) {$proxy.jwtPublicKeyCertificate = $jwtPublicKeyCertificate }
-    If( $psBoundParameters.ContainsKey("jwtAttributeUserId") ) {$proxy.jwtAttributeUserId = $jwtAttributeUserId }
-    If( $psBoundParameters.ContainsKey("jwtAttributeUserDirectory") ) {$proxy.jwtAttributeUserDirectory = $jwtAttributeUserDirectory }
-    If( $psBoundParameters.ContainsKey("jwtAttributeMap") ) {$proxy.jwtAttributeMap = $jwtAttributeMap }
-    If( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) {$proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
-    if ($PSBoundParameters.ContainsKey("customProperties")) { $proxy.customProperties = @(GetCustomProperties $customProperties) }
-    if ($PSBoundParameters.ContainsKey("tags")) { $proxy.tags = @(GetTags $tags) }
+        If ( $psBoundParameters.ContainsKey("samlSlo") ) { $proxy.samlSlo = $samlSlo.IsPresent }
+        If ( $psBoundParameters.ContainsKey("jwtPublicKeyCertificate") ) { $proxy.jwtPublicKeyCertificate = $jwtPublicKeyCertificate }
+        If ( $psBoundParameters.ContainsKey("jwtAttributeUserId") ) { $proxy.jwtAttributeUserId = $jwtAttributeUserId }
+        If ( $psBoundParameters.ContainsKey("jwtAttributeUserDirectory") ) { $proxy.jwtAttributeUserDirectory = $jwtAttributeUserDirectory }
+        If ( $psBoundParameters.ContainsKey("jwtAttributeMap") ) { $proxy.jwtAttributeMap = $jwtAttributeMap }
+        If ( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) { $proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $proxy.customProperties = @(GetCustomProperties $customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $proxy.tags = @(GetTags $tags) }
 
-    $json = $proxy | ConvertTo-Json -Compress -Depth 10
-    return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
-  }
+        $json = $proxy | ConvertTo-Json -Compress -Depth 10
+        return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
+    }
 }

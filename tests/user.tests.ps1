@@ -1,4 +1,4 @@
-Get-Module Qlik-Cli | Remove-Module -Force
+﻿Get-Module Qlik-Cli | Remove-Module -Force
 Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\user.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
@@ -6,105 +6,105 @@ Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
 
 Describe "New-QlikUser" {
-  Mock Invoke-QlikPost -Verifiable {
-    return ConvertFrom-Json $body
-  }
-
-  Context 'Create user from parameters' {
-    Mock Get-QlikTag {
-      return @(@{
-        id = '177cf33f-1ace-41e8-8382-1c443a51352d'
-      })
-    }
-    Mock Get-QlikCustomProperty {
-      return @(@{
-        id = 'daa5005e-5f3b-45c5-b2fd-1a1c92c5f367'
-      })
+    Mock Invoke-QlikPost -Verifiable {
+        return ConvertFrom-Json $body
     }
 
-    It 'should create a stream with all parameters' {
-      $user = New-QlikUser `
-        -userId 'me' `
-        -userDirectory 'DOMAIN' `
-        -name 'It is Me' `
-        -tags 'testing' `
-        -customProperties 'environment=development'
+    Context 'Create user from parameters' {
+        Mock Get-QlikTag {
+            return @(@{
+                    id = '177cf33f-1ace-41e8-8382-1c443a51352d'
+                })
+        }
+        Mock Get-QlikCustomProperty {
+            return @(@{
+                    id = 'daa5005e-5f3b-45c5-b2fd-1a1c92c5f367'
+                })
+        }
 
-      $user.name | Should Be 'It is Me'
-      $user.userId | Should Be 'me'
-      $user.userDirectory | Should Be 'DOMAIN'
-      $user.tags | Should -HaveCount 1
-      $user.customProperties | Should -HaveCount 1
+        It 'should create a stream with all parameters' {
+            $user = New-QlikUser `
+                -userId 'me' `
+                -userDirectory 'DOMAIN' `
+                -name 'It is Me' `
+                -tags 'testing' `
+                -customProperties 'environment=development'
 
-      Assert-VerifiableMock
+            $user.name | Should Be 'It is Me'
+            $user.userId | Should Be 'me'
+            $user.userDirectory | Should Be 'DOMAIN'
+            $user.tags | Should -HaveCount 1
+            $user.customProperties | Should -HaveCount 1
+
+            Assert-VerifiableMock
+        }
     }
-  }
 }
 
 Describe "Update-QlikUser" {
-  Mock Invoke-QlikPut -Verifiable {
-    return ConvertFrom-Json $body
-  }
-
-  Mock Get-QlikUser {
-    return @{
-      id = '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50'
-      tags = @(@{
-        id = '1b029edc-9c86-4e01-8c39-a10b1d9c4424'
-      })
-      customProperties = @(@{
-        id = 'a834722d-1306-499e-b028-11454240381b'
-      })
-    }
-  }
-
-  Context 'tags' {
-    Mock Get-QlikTag {
-      return $null
+    Mock Invoke-QlikPut -Verifiable {
+        return ConvertFrom-Json $body
     }
 
-    It 'should be possible to remove all tags' {
-      $user = Update-QlikUser `
-        -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50' `
-        -tags $null
-
-      $user.tags | Should -BeNullOrEmpty
-
-      Assert-VerifiableMock
+    Mock Get-QlikUser {
+        return @{
+            id = '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50'
+            tags = @(@{
+                    id = '1b029edc-9c86-4e01-8c39-a10b1d9c4424'
+                })
+            customProperties = @(@{
+                    id = 'a834722d-1306-499e-b028-11454240381b'
+                })
+        }
     }
 
-    It 'should not remove tags if parameter not provided' {
-      $user = Update-QlikUser `
-        -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50'
+    Context 'tags' {
+        Mock Get-QlikTag {
+            return $null
+        }
 
-      $user.tags | Should -HaveCount 1
+        It 'should be possible to remove all tags' {
+            $user = Update-QlikUser `
+                -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50' `
+                -tags $null
 
-      Assert-VerifiableMock
+            $user.tags | Should -BeNullOrEmpty
+
+            Assert-VerifiableMock
+        }
+
+        It 'should not remove tags if parameter not provided' {
+            $user = Update-QlikUser `
+                -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50'
+
+            $user.tags | Should -HaveCount 1
+
+            Assert-VerifiableMock
+        }
     }
-  }
 
-  Context 'custom property' {
-    Mock Get-QlikCustomProperty {
-      return $null
+    Context 'custom property' {
+        Mock Get-QlikCustomProperty {
+            return $null
+        }
+
+        It 'should be possible to remove all custom properties' {
+            $user = Update-QlikUser `
+                -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50' `
+                -customProperties $null
+
+            $user.customProperties | Should -BeNullOrEmpty
+
+            Assert-VerifiableMock
+        }
+
+        It 'should not remove custom properties if parameter not provided' {
+            $user = Update-QlikUser `
+                -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50'
+
+            $user.customProperties | Should -HaveCount 1
+
+            Assert-VerifiableMock
+        }
     }
-
-    It 'should be possible to remove all custom properties' {
-      $user = Update-QlikUser `
-        -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50' `
-        -customProperties $null
-
-      $user.customProperties | Should -BeNullOrEmpty
-
-      Assert-VerifiableMock
-    }
-
-    It 'should not remove custom properties if parameter not provided' {
-      $user = Update-QlikUser `
-        -id '15f4cbf7-a6ec-42c4-82b1-9b7c8ae93a50'
-
-      $user.customProperties | Should -HaveCount 1
-
-      Assert-VerifiableMock
-    }
-  }
 }
