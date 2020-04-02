@@ -101,9 +101,15 @@ function Connect-Qlik {
                 Certificate = $Certificate
                 Header = @{
                     "X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))
-                    "X-Qlik-Security" = "Context=$Context; " -f ($Attributes.Keys.ForEach{ "$_=$($Attributes.$_)" } -join '; ')
                 }
             }
+            if ($null -eq $Attributes) {
+                $Script:api_params.Header."X-Qlik-Security" = "Context=$Context"
+            }
+            else {
+                $Script:api_params.Header."X-Qlik-Security" = "Context=$Context; " -f ($Attributes.Keys.ForEach{ "$_=$($Attributes.$_)" } -join '; ')
+            }
+            
             $port = ":4242"
         }
         ElseIf ($Credential) {
