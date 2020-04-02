@@ -105,14 +105,13 @@ function Connect-Qlik
 		If ($Certificate)
 		{
 			Write-Verbose "Using certificate $($Certificate.FriendlyName) and user $username"
-			
 			$Script:api_params = @{
 				Certificate = $Certificate
 				Header	    = @{
 					"X-Qlik-User" = $("UserDirectory={0};UserId={1}" -f $($username -split "\\"))
-					"X-Qlik-Security" = "Context=$Context; " -f ($Attributes.ForEach{ "$_=$($Attributes.$_)" } -join '; ')
+					"X-Qlik-Security" = "Context=$Context; " -f ($Attributes.Keys.ForEach{ "$_=$($Attributes.$_)" } -join '; ')
 				}
-			}
+			}			
 			$port = ":4242"
 		}
 		ElseIf ($Credential)
