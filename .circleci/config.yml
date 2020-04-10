@@ -1,9 +1,12 @@
 version: 2
 jobs:
-  test:
+  test-unit:
     docker:
       - image: microsoft/powershell:ubuntu-16.04
     steps:
+      - run:
+          name: Install Git
+          command: apt-get update && apt-get install -y git
       - checkout
       - run:
           name: Test module
@@ -17,6 +20,30 @@ jobs:
           root: /output/workspace/
           paths:
             - ./*
+
+  quality-check:
+    docker:
+      - image: mcr.microsoft.com/powershell:lts-ubuntu-18.04
+    steps:
+      - run:
+          name: Install Git
+          command: apt-get update && apt-get install -y git
+      - checkout
+      - run:
+          name: Install PowerShell modules
+          shell: pwsh
+          command: |
+            $ProgressPreference = 'SilentlyContinue'
+            Install-Module PSScriptAnalyzer -Force | Out-Null
+            Import-Module PSScriptAnalyzer
+      - run:
+          name: Check best practices
+          shell: pwsh
+          command: Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary -EnableExit
+      - run:
+          name: Check code formatting
+          shell: pwsh
+          command: Invoke-ScriptAnalyzer -Path . -Recurse -Settings CodeFormatting -ExcludeRule PSAlignAssignmentStatement -ReportSummary -EnableExit
 
   publish-powershell-gallery:
     docker:
@@ -75,7 +102,14 @@ workflows:
   version: 2
   test-and-deploy:
     jobs:
-      - test:
+      - test-unit:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+            tags:
+              only: /^v\d+\.\d+\.\d+.*/
+      - quality-check:
           filters:
             branches:
               ignore:
@@ -84,7 +118,7 @@ workflows:
               only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
           requires:
-            - test
+            - test-unit
           filters:
             branches:
               ignore: /.*/
@@ -92,7 +126,7 @@ workflows:
               only: /^v\d+\.\d+\.\d+$/
       - publish-github-release:
           requires:
-            - test
+            - test-unit
           filters:
             branches:
               ignore: /.*/

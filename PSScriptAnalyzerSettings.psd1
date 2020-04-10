@@ -1,8 +1,8 @@
-@{
-  Severity = @('Error', 'Warning', 'ParseError')
-  ExcludeRules = @(
-    'PSUseToExportFieldsInManifest',
-    'PSUseDeclaredVarsMoreThanAssignments',
-    'PSUseShouldProcessForStateChangingFunctions'
-  )
+﻿@{
+    Severity = @('Error', 'Warning', 'ParseError')
+    ExcludeRules = @(
+        'PSUseToExportFieldsInManifest',
+        'PSUseDeclaredVarsMoreThanAssignments',
+        'PSUseShouldProcessForStateChangingFunctions'
+    )
 }
