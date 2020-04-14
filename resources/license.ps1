@@ -33,6 +33,7 @@ function Get-QlikLicense {
 function Get-QlikLicenseAudit {
     [CmdletBinding()]
     param (
+        [parameter(Mandatory = $true)]
         [string]$resourceType,
         [string]$resourceFilter,
         [string]$userFilter,
