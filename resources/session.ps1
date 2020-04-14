@@ -91,7 +91,7 @@ function Get-QlikSession {
     .EXAMPLE
                 PS C:\> Remove-QlikSession -SessionId "7b8ab85e-0c85-4fcb-8e56-4ead683153fb" -virtualProxyPrefix "/ProxyX1"
     .EXAMPLE
-                PS C:\> Get-QlikSession -userDirectory Domain -userId Marc | Foreach{Remove-QlikSession}
+                PS C:\> Get-QlikSession -userDirectory Domain -userId Marc | Remove-QlikSession
 
     .NOTES
         Additional information about the Session API can be found
