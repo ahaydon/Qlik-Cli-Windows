@@ -101,6 +101,8 @@ function Import-QlikApp {
         }
         else {
             $path = $path -f 'import'
+            if (! $file.StartsWith('"')) { $file = "`"$file" }
+            if (! $file.EndsWith('"')) { $file = "$file`"" }
             return Invoke-QlikPost $path $file
         }
     }

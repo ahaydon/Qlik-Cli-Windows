@@ -39,15 +39,29 @@ Describe "Copy-QlikApp" {
 }
 
 Describe "Import-QlikApp" {
-    Mock Invoke-QlikPost { return $path } -Verifiable
-
     Context 'name' {
         It 'should be url encoded' {
+            Mock Invoke-QlikPost { return $path } -Verifiable
+
             $app = Import-QlikApp `
                 -file '/some/path/to/app.qvf' `
                 -name 'my new app'
 
             $app | Should Match 'name=my\+new\+app'
+
+            Assert-VerifiableMock
+        }
+    }
+
+    Context 'filename' {
+        It 'should be in double quotes' {
+            Mock Invoke-QlikPost { return $body } -Verifiable
+
+            $app = Import-QlikApp `
+                -file 'app.qvf' `
+                -name 'new app'
+
+            $app | Should Match '"app.qvf"'
 
             Assert-VerifiableMock
         }
