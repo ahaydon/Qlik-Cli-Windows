@@ -10,13 +10,13 @@ function CallRestUri {
         $path,
         $extraParams
     )
-    
+
     Write-Verbose "Raw output: $rawOutput"
     If ($null -eq $Script:prefix) { Connect-Qlik > $null }
     If (! $path.StartsWith("http")) {
         $path = $Script:prefix + $path
     }
-    
+
     $xrfKey = GetXrfKey
     If ($path.contains("?")) {
         $path += "&xrfkey=$xrfKey"
@@ -24,9 +24,9 @@ function CallRestUri {
     else {
         $path += "?xrfkey=$xrfKey"
     }
-    
+
     $params = DeepCopy $api_params
-    
+
     If ($extraParams) { $params += $extraParams }
     If (!$params.Header) {
         $params.Header = @{ }
@@ -36,29 +36,29 @@ function CallRestUri {
         $params.Header.Add("x-Qlik-Xrfkey", $xrfKey)
     }
     If ($params.Body) { Write-Verbose $params.Body }
-    
+
     Write-Verbose "Calling $method for $path"
-    
+
     try {
         $paramInvokeRestMethod = @{
             Method = $method
             Uri = $path
         }
-        
+
         If ($null -eq $script:webSession) {
             $paramInvokeRestMethod.SessionVariable = 'webSession'
         }
         else {
             $paramInvokeRestMethod.WebSession = $script:webSession
         }
-        
+
         if ($params.OutFile -or $params.InFile) {
             $ProgressPreference = 'SilentlyContinue'
             if ($null -eq $params.TimeoutSec) {
                 $paramInvokeRestMethod.TimeoutSec = 300
             }
         }
-        
+
         $result = Invoke-RestMethod @paramInvokeRestMethod @params
         $script:webSession = $webSession
     }
@@ -66,7 +66,7 @@ function CallRestUri {
         throw $_
         return
     }
-    
+
     if (!$rawOutput) {
         Write-Verbose "Formatting response"
         $result = FormatOutput($result)
@@ -79,7 +79,7 @@ function DeepCopy {
     (
         $data
     )
-    
+
     $copy = @{ }
     $data.Keys | ForEach-Object {
         $copy.Add($_, $(

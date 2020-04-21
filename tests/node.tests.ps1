@@ -54,7 +54,7 @@ Describe "New-QlikNode" {
 
             Assert-VerifiableMock
         }
-    
+
         It 'should allow disabling services even if failoverCandidate is provided' {
             New-QlikNode `
                 -Hostname 'sense-rim.domain.com' `

@@ -9,7 +9,7 @@
         [switch]$full,
         [switch]$raw
     )
-    
+
     PROCESS {
         $path = "/qrs/app/object"
         If ($id) { $path += "/$id" }
@@ -25,10 +25,10 @@ function Publish-QlikObject {
         [parameter(Mandatory = $true, Position = 0, ValueFromPipelinebyPropertyName = $True)]
         [string]$id
     )
-    
+
     PROCESS {
         $path = "/qrs/app/object/$id/publish"
-        
+
         return Invoke-QlikPut $path
     }
 }
@@ -39,7 +39,7 @@ function Remove-QlikObject {
         [parameter(Mandatory = $true, Position = 0, ValueFromPipelinebyPropertyName = $true)]
         [string]$id
     )
-    
+
     PROCESS {
         return Invoke-QlikDelete "/qrs/app/object/$id"
     }
@@ -51,10 +51,10 @@ function Unpublish-QlikObject {
         [parameter(Mandatory = $true, Position = 0, ValueFromPipelinebyPropertyName = $True)]
         [string]$id
     )
-    
+
     PROCESS {
         $path = "/qrs/app/object/$id/unpublish"
-        
+
         return Invoke-QlikPut $path
     }
 }
@@ -67,14 +67,14 @@ function Update-QlikObject {
         [string]$owner,
         [bool]$approved
     )
-    
+
     PROCESS {
         $obj = Get-QlikObject $id -raw
         If ($owner) {
-            $obj.owner = @{ id = $owner }
+            $obj.owner = GetUser $owner
         }
         If ($psBoundParameters.ContainsKey("approved")) { $obj.approved = $approved }
-        
+
         $json = $obj | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut "/qrs/app/object/$id" $json
     }

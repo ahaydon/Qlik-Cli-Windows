@@ -1,5 +1,5 @@
 ﻿@{
-    Severity = @('Error', 'Warning', 'ParseError')
+    Severity = @('Error', 'Warning', 'ParseError', 'Information')
     ExcludeRules = @(
         'PSUseToExportFieldsInManifest',
         'PSUseDeclaredVarsMoreThanAssignments',

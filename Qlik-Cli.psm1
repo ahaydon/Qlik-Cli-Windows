@@ -3,34 +3,34 @@
 <#
 	.SYNOPSIS
 		Establishes a session with a Qlik Sense server, other Qlik cmdlets will use this session to invoke commands.
-	
+
 	.DESCRIPTION
 		Uses the parameter values to establish a new session with a Sense server, if a valid certificate can be found in the Windows certificate store it will be used unless this is overridden by the certificate parameter. If a valid certificate cannot be found Windows authentication will be attempted using the credentials of the user that is running the PowerShell console.
-	
+
 	.PARAMETER Computername
 		 Name of the Sense server to connect to
-	
+
 	.PARAMETER TrustAllCerts
 		 Disable checking of certificate trust
-	
+
 	.PARAMETER Username
 		 UserId to use with certificate authentication in the format domain\username
-	
+
 	.PARAMETER Certificate
 		 Client certificate to use for authentication
-	
+
 	.PARAMETER Context
 		User Context for Connection
-	
+
 	.PARAMETER Attributes
 		Any additional attributes to use on the connection request
-	
+
 	.PARAMETER UseDefaultCredentials
 		 Use credentials of logged on user for authentication, prevents automatically locating a certificate
-	
+
 	.PARAMETER TimeoutSec
 		Set a Global Timeout for all Rest Requests
-	
+
 	.EXAMPLE
 		Connect-Qlik -computername CentralNodeName -username domain\username
 
@@ -59,13 +59,13 @@ function Connect-Qlik {
         [switch]$UseDefaultCredentials,
         [int]$TimeoutSec
     )
-    
+
     PROCESS {
         # Since we are connecting we need to clear any variables relating to previous connections
         $script:api_params = $null
         $script:prefix = $null
         $script:webSession = $null
-        
+
         If ($TrustAllCerts -and $PSVersionTable.PSVersion.Major -lt 6) {
             if (-not ([System.Management.Automation.PSTypeName]'TrustAllCertsPolicy').Type) {
                 Add-Type @"
@@ -94,7 +94,7 @@ function Connect-Qlik {
                 $Certificate = $certs[0]
             }
         }
-        
+
         If ($Certificate) {
             Write-Verbose "Using certificate $($Certificate.FriendlyName) and user $username"
             $Script:api_params = @{
@@ -109,7 +109,7 @@ function Connect-Qlik {
             else {
                 $Script:api_params.Header."X-Qlik-Security" = "Context=$Context; " -f ($Attributes.Keys.ForEach{ "$_=$($Attributes.$_)" } -join '; ')
             }
-            
+
             $port = ":4242"
         }
         ElseIf ($Credential) {
@@ -124,13 +124,13 @@ function Connect-Qlik {
                 UseDefaultCredentials = $true
             }
         }
-        
+
         if ($TrustAllCerts -and $PSVersionTable.PSVersion.Major -ge 6) {
             $Script:api_params.SkipCertificateCheck = $true
         }
-        
+
         if ($TimeoutSec) { $script:api_params.TimeoutSec = $TimeoutSec }
-        
+
         if (! $Computername) {
             $HostPath = 'C:\ProgramData\Qlik\Sense\Host.cfg'
             if (Test-Path $HostPath) {
@@ -146,7 +146,7 @@ function Connect-Qlik {
         else {
             $Script:prefix = "https://" + $Computername + $port
         }
-        
+
         $result = Get-QlikAbout
         return $result
     }
@@ -159,7 +159,7 @@ function Import-QlikObject {
         [parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [PSObject[]]$object
     )
-    
+
     PROCESS {
         $object | ForEach-Object {
             $path = "/qrs/{0}" -F $_.schemaPath
@@ -198,7 +198,7 @@ function Invoke-QlikGet {
                 $path += "?filter=$filter"
             }
         }
-        
+
         return CallRestUri Get $path
     }
 }
@@ -217,7 +217,7 @@ function Invoke-QlikPost {
             ContentType = $contentType
             Body = $body
         }
-        
+
         return CallRestUri Post $path $params
     }
 }
@@ -236,7 +236,7 @@ function Invoke-QlikPut {
             ContentType = $contentType
             Body = $body
         }
-        
+
         return CallRestUri Put $path $params
     }
 }
@@ -253,7 +253,7 @@ function Invoke-QlikDownload {
         $params = @{
             OutFile = $filename
         }
-        
+
         return CallRestUri Get $path $params
     }
 }
@@ -272,7 +272,7 @@ function Invoke-QlikUpload {
             InFile = $filename
             ContentType = $ContentType
         }
-        
+
         return CallRestUri Post $path $params
     }
 }
