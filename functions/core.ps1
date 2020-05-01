@@ -63,7 +63,6 @@ function CallRestUri {
         $result = Invoke-RestMethod @paramInvokeRestMethod @params
         if ($null -ne $webSession){
             $script:webSessionContainer = $webSession
-            $global:websessioncopy = $script:webSessionContainer
         }
     }
     catch {
