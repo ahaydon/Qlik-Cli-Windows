@@ -1,5 +1,6 @@
 ﻿$script:guid = "^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$"
 $script:isDate = "^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$"
+$script:webSessionContainer = $null
 if ($qlik_output_raw) { $rawOutput = $true }
 
 
@@ -45,11 +46,11 @@ function CallRestUri {
             Uri = $path
         }
 
-        If ($null -eq $script:webSession) {
+        If ($null -eq $script:webSessionContainer) {
             $paramInvokeRestMethod.SessionVariable = 'webSession'
         }
         else {
-            $paramInvokeRestMethod.WebSession = $script:webSession
+            $paramInvokeRestMethod.WebSession = $script:webSessionContainer
         }
 
         if ($params.OutFile -or $params.InFile) {
@@ -60,7 +61,9 @@ function CallRestUri {
         }
 
         $result = Invoke-RestMethod @paramInvokeRestMethod @params
-        $script:webSession = $webSession
+        if ($null -ne $webSession) {
+            $script:webSessionContainer = $webSession
+        }
     }
     catch {
         throw $_
