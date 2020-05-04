@@ -101,7 +101,7 @@ Describe "Update-QlikDataConnection" {
                     "id": "a834722d-1306-499e-b028-11454240381b"
                 }]
             }
-"@ | ConvertFrom-Json -Depth 10
+"@ | ConvertFrom-Json
     }
 
     Context 'Password' {
