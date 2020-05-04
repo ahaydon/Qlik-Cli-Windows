@@ -3,6 +3,7 @@ param()
 
 Get-Module Qlik-Cli | Remove-Module -Force
 Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
+. (Resolve-Path "$PSScriptRoot\..\functions\core.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\dataconnection.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
 . (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
@@ -47,6 +48,33 @@ Describe "New-QlikDataConnection" {
             Assert-VerifiableMock
         }
     }
+
+    Context 'tags' {
+        Mock Get-QlikTag {
+            return @(@{
+                    id = 'aa3995e8-9a1c-44b2-8348-71124868e5e1'
+                    name = 'Test Tag'
+                })
+        }
+
+        It 'should assign tags as an array' {
+            $dc = New-QlikDataConnection `
+                -tags 'Test Tag'
+
+            $dc.tags.GetType().Name | Should Be 'Object[]'
+        }
+
+        It 'should be correctly converted to json' {
+            Mock Invoke-QlikPost -Verifiable {
+                return $body
+            }
+
+            $dc = New-QlikDataConnection `
+                -tags 'Test Tag'
+
+            $dc | Should Match '"tags":\[\{"id":"aa3995e8-9a1c-44b2-8348-71124868e5e1"}]'
+        }
+    }
 }
 
 Describe "Update-QlikDataConnection" {
@@ -54,10 +82,13 @@ Describe "Update-QlikDataConnection" {
         return ConvertFrom-Json $body
     }
 
+    Mock Invoke-QlikPost {
+        return $body
+    }
+
     Mock Get-QlikDataConnection -ParameterFilter {
         $id -eq '158e743b-c59f-490e-900c-b57e66cf8185'
     } {
-        # return '{"id": "158e743b-c59f-490e-900c-b57e66cf8185", "username": "username", "connectionString": "C:\\Data", "tags": {"id": "1b029edc-9c86-4e01-8c39-a10b1d9c4424"}' | ConvertFrom-Json
         return @"
             {
                 "id": "158e743b-c59f-490e-900c-b57e66cf8185",
@@ -70,7 +101,7 @@ Describe "Update-QlikDataConnection" {
                     "id": "a834722d-1306-499e-b028-11454240381b"
                 }]
             }
-"@ | ConvertFrom-Json
+"@ | ConvertFrom-Json -Depth 10
     }
 
     Context 'Password' {
@@ -109,6 +140,12 @@ Describe "Update-QlikDataConnection" {
     }
 
     Context 'tags' {
+        Mock Get-QlikTag -ParameterFilter { $filter -eq "name eq 'Test Tag'" } {
+            return @{
+                id = 'aa3995e8-9a1c-44b2-8348-71124868e5e1'
+                name = 'Test Tag'
+            }
+        }
         Mock Get-QlikTag {
             return $null
         }
@@ -130,6 +167,26 @@ Describe "Update-QlikDataConnection" {
             $dc.tags | Should -HaveCount 1
 
             Assert-VerifiableMock
+        }
+
+        It 'should assign tags as an array' {
+            $dc = Update-QlikDataConnection `
+                -id '158e743b-c59f-490e-900c-b57e66cf8185' `
+                -tags 'Test Tag'
+
+            $dc.tags.GetType().Name | Should Be 'Object[]'
+        }
+
+        It 'should be correctly converted to json' {
+            Mock Invoke-QlikPut -Verifiable {
+                return $body
+            }
+
+            $dc = Update-QlikDataConnection `
+                -id '158e743b-c59f-490e-900c-b57e66cf8185' `
+                -tags 'Test Tag'
+
+            $dc | Should Match '"tags":\[\{"id":"aa3995e8-9a1c-44b2-8348-71124868e5e1"}]'
         }
     }
 

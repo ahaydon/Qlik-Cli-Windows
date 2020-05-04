@@ -57,9 +57,18 @@ function GetCustomProperties($customProperties) {
 function GetTags($tags) {
     $prop = @(
         $tags | Where-Object { $_ } | ForEach-Object {
-            $p = Get-QlikTag -filter "name eq '$_'"
-            @{
-                id = $p.id
+            if ($_ -match $script:guid) {
+                @{ id = $_ }
+            }
+            else {
+                $p = Get-QlikTag -filter "name eq '$_'"
+                if (! $p) {
+                    Write-Warning "Tag with name '$_' not found"
+                    Continue
+                }
+                @{
+                    id = $p.id
+                }
             }
         }
     )
