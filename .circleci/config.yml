@@ -34,7 +34,7 @@ jobs:
           shell: pwsh
           command: |
             $ProgressPreference = 'SilentlyContinue'
-            Install-Module PSScriptAnalyzer -Force | Out-Null
+            Install-Module PSScriptAnalyzer -Force -RequiredVersion 1.18.3 | Out-Null
             Import-Module PSScriptAnalyzer
       - run:
           name: Check best practices
