@@ -8,8 +8,6 @@
 
         [parameter(ParameterSetName = "CompositeEvent")]
         [string[]]$OnSuccess,
-        [parameter(ParameterSetName = "CompositeEvent")]
-        [string[]]$OnFail,
 
         [parameter(ParameterSetName = "SchemaEvent")]
         [DateTime]$startDate,

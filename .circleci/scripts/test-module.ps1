@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = "Stop"
 
-Install-Module Pester -Force
+Install-Module Pester -Force -RequiredVersion 4.10.1
 Import-Module ./Qlik-Cli.psd1
 
 if ((Test-ModuleManifest -Path ./Qlik-Cli.psd1).Version -ne (Get-Module -Name Qlik-Cli).Version) {
