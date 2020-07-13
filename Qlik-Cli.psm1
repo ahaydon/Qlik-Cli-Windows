@@ -65,6 +65,7 @@ function Connect-Qlik {
         $script:api_params = $null
         $script:prefix = $null
         $script:webSession = $null
+        $script:webSessionContainer = $null
 
         If ($TrustAllCerts -and $PSVersionTable.PSVersion.Major -lt 6) {
             if (-not ([System.Management.Automation.PSTypeName]'TrustAllCertsPolicy').Type) {
