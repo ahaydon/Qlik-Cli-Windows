@@ -1,13 +1,13 @@
 ## About
 Qlik-Cli is a PowerShell module that provides a command line interface for managing a Qlik Sense environment. The module provides a set of commands for viewing and editing configuration settings, as well as managing tasks and other features available through the APIs.
 
-[![Build](https://img.shields.io/circleci/project/github/ahaydon/Qlik-Cli/master.svg)](https://circleci.com/gh/ahaydon/Qlik-Cli)
-[![Documentation](https://img.shields.io/github/deployments/ahaydon/qlik-cli/github-pages?label=docs)](https://ahaydon.github.io/Qlik-Cli/)
+[![Build](https://img.shields.io/circleci/project/github/ahaydon/Qlik-Cli-Windows/master.svg)](https://circleci.com/gh/ahaydon/Qlik-Cli-Windows)
+[![Documentation](https://img.shields.io/github/deployments/ahaydon/qlik-cli-windows/github-pages?label=docs)](https://ahaydon.github.io/Qlik-Cli-Windows/)
 [![Release](https://img.shields.io/powershellgallery/v/Qlik-Cli.svg?label=release)](https://www.powershellgallery.com/packages/Qlik-Cli)
 [![Downloads](https://img.shields.io/powershellgallery/dt/Qlik-Cli.svg?color=blue)](https://www.powershellgallery.com/packages/Qlik-Cli)
 [![Platform](https://img.shields.io/powershellgallery/p/qlik-cli)](https://www.powershellgallery.com/packages/Qlik-Cli)
 [![Slack](https://img.shields.io/static/v1.svg?message=qlik-branch&label=slack&color=yellow)](https://qlik-branch.slack.com/messages/CBZLDMTTN)
-[![License](https://img.shields.io/github/license/ahaydon/Qlik-Cli.svg)](https://github.com/ahaydon/Qlik-Cli/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/ahaydon/Qlik-Cli-Windows.svg)](https://github.com/ahaydon/Qlik-Cli-Windows/blob/master/LICENSE)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 The desired state configuration module has now been moved to https://github.com/ahaydon/Qlik-DSC
