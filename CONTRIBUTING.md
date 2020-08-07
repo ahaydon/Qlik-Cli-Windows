@@ -10,7 +10,7 @@
 
 ## Get the code
 ```sh
-git clone https://github.com/ahaydon/Qlik-Cli
+git clone https://github.com/ahaydon/Qlik-Cli-Windows.git
 ```
 
 ## Code structure
@@ -28,7 +28,7 @@ Invoke-Pester
 ```
 2. Check you code conforms to best practices
 ```powershell
-Invoke-ScripAnalyzer -Path . -Recurse -ReportSummary
+Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
 ```
 3. Check your code meets the code formatting standards of this repo
 ```powershell
