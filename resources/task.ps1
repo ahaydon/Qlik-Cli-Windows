@@ -320,8 +320,8 @@ function New-QlikTaskSchedule {
         [string]$ReloadTaskName
     )
 
-    [string]$StartDate = $($StartDate.GetDateTimeFormats()[97])
-    [string]$expirationDate = $expirationDate.GetDateTimeFormats()[97]
+    [string]$StartDate =  $startDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
+    [string]$expirationDate = $expirationDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
 
     if ($PSBoundParameters.ContainsKey("DaysOfWeek")) {
         $WeekDays = ($DaysOfWeek | ForEach-Object {
