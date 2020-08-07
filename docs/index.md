@@ -128,6 +128,9 @@ Gets the tags.
 ### [Get-QlikTask](Get-QlikTask.md)
 Gets tasks of all types (reload, user directory sync).
 
+### [Get-QlikTaskSchedule](Get-QlikTaskSchedule.md)
+{{ Fill in the Synopsis }}
+
 ### [Get-QlikUser](Get-QlikUser.md)
 Gets users.
 
@@ -182,6 +185,9 @@ Creates a new custom property.
 ### [New-QlikDataConnection](New-QlikDataConnection.md)
 Creates a new data connection.
 
+### [New-QlikLicenseRule](New-QlikLicenseRule.md)
+Creates a new license allocation rule.
+
 ### [New-QlikNode](New-QlikNode.md)
 Creates a new node in the cluster.
 
@@ -202,6 +208,9 @@ Creates a new tag.
 
 ### [New-QlikTask](New-QlikTask.md)
 Creates a new reload task.
+
+### [New-QlikTaskSchedule](New-QlikTaskSchedule.md)
+Adds a new Reload Task Schedule Trigger
 
 ### [New-QlikUser](New-QlikUser.md)
 Creates a new user.
@@ -265,6 +274,9 @@ Deletes a tag and removes it from all resources.
 
 ### [Remove-QlikTask](Remove-QlikTask.md)
 Deletes a task.
+
+### [Remove-QlikTaskSchedule](Remove-QlikTaskSchedule.md)
+Remove a specific Schdule from a reload task
 
 ### [Remove-QlikUser](Remove-QlikUser.md)
 Deletes a user.
