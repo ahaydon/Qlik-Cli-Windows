@@ -179,3 +179,43 @@ function Update-QlikRule {
         return Invoke-QlikPut "/qrs/systemrule/$id" $json
     }
 }
+
+function New-QlikLicenseRule {
+    [CmdletBinding()]
+    param
+    (
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Analyzer', 'Professional')]
+        [string]$Type,
+        [string]$Rule,
+        [string]$Comment,
+        [switch]$Disabled,
+        [string[]]$CustomProperties,
+        [string[]]$Tags
+    )
+    PROCESS	{
+        $systemrule = @{
+            type = "Custom";
+            rule = $Rule;
+            name = $Name;
+            resourceFilter = "";
+            actions = 1;
+            comment = $Comment;
+            disabled = $Disabled.IsPresent;
+            ruleContext = 1;
+            customProperties = @();
+            schemaPath = "SystemRule"
+            category = "License"
+        }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $systemrule.customProperties = @(GetCustomProperties $customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags) }
+        $AccessGroup = @{
+            name = $Name
+        }
+        $QSAccessGroup = Invoke-QlikPost -path "/qrs/license/$($type)accessgroup" -body $($AccessGroup | ConvertTo-Json)
+        $systemrule.resourceFilter = "License.$($Type)AccessGroup_$($QSAccessGroup.id)"
+        $json = $systemrule | ConvertTo-Json -Compress -Depth 10
+        return Invoke-QlikPost -path "/qrs/systemrule" -body $json
+    }
+}
