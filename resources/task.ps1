@@ -98,7 +98,7 @@ function Get-QlikReloadTask {
         If ( $id ) { $path += "/$id" }
         If ( $full ) { $path += "/full" }
         If ( $raw ) { $rawOutput = $true }
-        return Invoke-QlikGet -Path $path -Filter $filter
+        return Invoke-QlikGet -path $path -filter $filter
     }
 }
 
@@ -248,7 +248,7 @@ function Update-QlikReloadTask {
         if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags) }
 
         $json = $task | ConvertTo-Json -Compress -Depth 10
-        return Invoke-QlikPut -Path "/qrs/reloadtask/$id" -Body $json
+        return Invoke-QlikPut -path "/qrs/reloadtask/$id" -body $json
     }
 }
 

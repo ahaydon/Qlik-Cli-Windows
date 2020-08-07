@@ -13,7 +13,7 @@
         If ( $Id ) { $Path += "/$Id" }
         If ( $Full ) { $Path += "/full" }
         If ( $raw ) { $rawOutput = $true }
-        return Invoke-QlikGet -Path $Path -Filter $Filter
+        return Invoke-QlikGet -path $Path -filter $Filter
     }
 }
 
@@ -66,7 +66,7 @@ function Update-QlikExtension {
     )
 
     PROCESS {
-        $ext = Get-QlikExtension -raw -id $id
+        $ext = Get-QlikExtension -raw -Id $id
         if ($PSBoundParameters.ContainsKey("customProperties")) { $ext.customProperties = @(GetCustomProperties $customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $ext.tags = @(GetTags $tags) }
         if ($PSBoundParameters.ContainsKey("owner")) { $ext.owner = GetUser $owner }

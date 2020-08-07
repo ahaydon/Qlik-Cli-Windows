@@ -32,6 +32,6 @@ function Get-QlikCertificateDistributionPath {
 
     PROCESS {
         $path = "/qrs/certificatedistribution/exportcertificatespath"
-        return Invoke-QlikGet -Path $path
+        return Invoke-QlikGet -path $path
     }
 }

@@ -18,7 +18,7 @@ Invoke-Pester `
 $mod = Import-LocalizedData -FileName Qlik-Cli.psd1 -BaseDirectory ./
 Pop-Location
 $content = $mod.NestedModules + $mod.RootModule |
-    ForEach-Object { Get-Content -raw $_ }
+    ForEach-Object { Get-Content -Raw $_ }
 $content += "`nExport-ModuleMember -Function " +
 ($mod.FunctionsToExport -join ', ') +
 ' -Alias ' + ($mod.AliasesToExport -join ', ')

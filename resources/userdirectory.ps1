@@ -114,32 +114,32 @@ function Update-QlikUserDirectory {
             $password = $Credential.GetNetworkCredential().Password
         }
 
-        $ud = Get-QlikUserDirectory -Id $id -raw
+        $ud = Get-QlikUserDirectory -id $id -raw
         if ($name) {
             $ud.name = $name
         }
         if ($path) {
-            ($ud.settings | Where-Object name -eq path).value = $path
+            ($ud.settings | Where-Object name -EQ path).value = $path
         }
         if ($username) {
-            ($ud.settings | Where-Object name -eq 'User name').value = $username
+            ($ud.settings | Where-Object name -EQ 'User name').value = $username
         }
         if ($password) {
-            ($ud.settings | Where-Object name -eq password).value = $password
+            ($ud.settings | Where-Object name -EQ password).value = $password
         }
         if ($ldapFilter) {
-            ($ud.settings | Where-Object name -eq 'LDAP Filter').value = $ldapFilter
+            ($ud.settings | Where-Object name -EQ 'LDAP Filter').value = $ldapFilter
         }
         if ($timeout) {
-            ($ud.settings | Where-Object name -eq 'Synchronization timeout in seconds').value = $timeout
+            ($ud.settings | Where-Object name -EQ 'Synchronization timeout in seconds').value = $timeout
         }
         if ($pageSize) {
-            ($ud.settings | Where-Object name -eq 'Page size').value = $pageSize
+            ($ud.settings | Where-Object name -EQ 'Page size').value = $pageSize
         }
         if ($PSBoundParameters.ContainsKey("customProperties")) { $ud.customProperties = @(GetCustomProperties $customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $ud.tags = @(GetTags $tags) }
 
         $json = $ud | ConvertTo-Json -Compress -Depth 10
-        return Invoke-QlikPut -Path "/qrs/userdirectory/$id" -Body $json
+        return Invoke-QlikPut -path "/qrs/userdirectory/$id" -body $json
     }
 }
