@@ -24,7 +24,7 @@
             $enumsRelated = $Script:enums | Where-Object { $_.Usages -contains "$schemaPath.$($prop.Name)" }
             If ( $enumsRelated ) {
                 # If there is an enum for the property then resolve it
-                $value = ((($enumsRelated | Select-Object -expandproperty values | Where-Object { $_ -like "$($object.$($prop.Name)):*" }) -split ":")[1]).TrimStart()
+                $value = ((($enumsRelated | Select-Object -ExpandProperty values | Where-Object { $_ -like "$($object.$($prop.Name)):*" }) -split ":")[1]).TrimStart()
                 Write-Debug "Resolving $($prop.Name) from $($object.$($prop.Name)) to $value"
                 $object.$($prop.Name) = $value
             }

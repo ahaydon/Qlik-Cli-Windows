@@ -75,7 +75,7 @@ function Update-QlikEngine {
     )
 
     PROCESS {
-        $engine = Get-QlikEngine -Id $id -raw
+        $engine = Get-QlikEngine -id $id -raw
         Write-Verbose $workingSetSizeMode
         if ( $workingSetSizeMode ) {
             switch ($workingSetSizeMode) {
@@ -129,6 +129,6 @@ function Update-QlikEngine {
             $engine.settings.genericUndoBufferMaxSize = $genericUndoBufferMaxSize
         }
         $json = $engine | ConvertTo-Json -Compress -Depth 10
-        return Invoke-QlikPut -Path "/qrs/engineservice/$id" -Body $json
+        return Invoke-QlikPut -path "/qrs/engineservice/$id" -body $json
     }
 }

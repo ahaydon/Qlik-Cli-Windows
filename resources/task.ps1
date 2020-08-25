@@ -98,7 +98,7 @@ function Get-QlikReloadTask {
         If ( $id ) { $path += "/$id" }
         If ( $full ) { $path += "/full" }
         If ( $raw ) { $rawOutput = $true }
-        return Invoke-QlikGet -Path $path -Filter $filter
+        return Invoke-QlikGet -path $path -filter $filter
     }
 }
 
@@ -248,7 +248,7 @@ function Update-QlikReloadTask {
         if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags) }
 
         $json = $task | ConvertTo-Json -Compress -Depth 10
-        return Invoke-QlikPut -Path "/qrs/reloadtask/$id" -Body $json
+        return Invoke-QlikPut -path "/qrs/reloadtask/$id" -body $json
     }
 }
 
@@ -292,4 +292,256 @@ function Wait-QlikExecution {
         } until ($taskstatuscode -gt 3) #status code of more than 3 is a completion (both success and fail)
         return $result
     }
+}
+
+
+function New-QlikTaskSchedule {
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    param
+    (
+        [string]$Name,
+        [Parameter(ParameterSetName = 'TaskID')]
+        [Parameter(ParameterSetName = 'TaskName', Mandatory = $true)]
+        [ValidateSet('Once', 'Minute', 'Hourly', 'Daily', 'Weekly', 'Monthly')]
+        [string]$Repeat = 'Daily',
+        [int]$RepeatEvery = 1,
+        [datetime]$StartDate = $(Get-Date),
+        [dateTime]$expirationDate = "9999-01-01T00:00:00.000",
+        [ValidateSet('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')]
+        [string[]]$DaysOfWeek = "Monday",
+        [ValidateRange(1, 31)]
+        [string[]]$DaysOfMonth,
+        [ValidateSet('Pacific/Honolulu', 'America/Anchorage', 'America/Los_Angeles', 'America/Denver', 'America/Mazatlan', 'America/Phoenix', 'America/Belize', 'America/Chicago', 'America/Mexico_City', 'America/Regina', 'America/Bogota', 'America/Indianapolis', 'America/New_York', 'America/Caracas', 'America/Halifax', 'America/St_Johns', 'America/Buenos_Aires', 'America/Godthab', 'America/Santiago', 'America/Sao_Paulo', 'Atlantic/South_Georgia', 'Atlantic/Azores', 'Atlantic/Cape_Verde', 'UTC', 'Atlantic/Reykjavik', 'Africa/Casablanca', 'Europe/Dublin', 'Europe/Belgrade', 'Europe/Paris', 'Europe/Warsaw', 'Africa/Cairo', 'Africa/Harare', 'Asia/Jerusalem', 'Europe/Athens', 'Europe/Bucharest', 'Europe/Helsinki', 'Africa/Nairobi', 'Asia/Baghdad', 'Asia/Kuwait', 'Europe/Minsk', 'Europe/Moscow', 'Asia/Tehran', 'Asia/Baku', 'Asia/Muscat', 'Asia/Kabul', 'Asia/Karachi', 'Asia/Yekaterinburg', 'Asia/Calcutta', 'Asia/Colombo', 'Asia/Katmandu', 'Asia/Almaty', 'Asia/Dhaka', 'Asia/Rangoon', 'Asia/Bangkok', 'Asia/Krasnoyarsk', 'Asia/Hong_Kong', 'Asia/Irkutsk', 'Asia/Kuala_Lumpur', 'Asia/Taipei', 'Australia/Perth', 'Asia/Seoul', 'Asia/Tokyo', 'Asia/Yakutsk', 'Australia/Adelaide', 'Australia/Darwin', 'Asia/Vladivostok', 'Australia/Brisbane', 'Australia/Hobart', 'Australia/Sydney', 'Pacific/Guam', 'Pacific/Noumea', 'Pacific/Auckland', 'Pacific/Fiji', 'Pacific/Apia', 'Pacific/Tongatapu')]
+        $TimeZone = 'UTC',
+        [switch]$DaylightSavingTime,
+        [Parameter(ParameterSetName = 'TaskID', Mandatory = $true)]
+        [string]$ReloadTaskID,
+        [Parameter(ParameterSetName = 'TaskName', Mandatory = $true)]
+        [string]$ReloadTaskName
+    )
+
+    [string]$StartDate = $startDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
+    [string]$expirationDate = $expirationDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
+
+    if ($PSBoundParameters.ContainsKey("DaysOfWeek")) {
+        $WeekDays = ($DaysOfWeek | ForEach-Object {
+                switch ($_)	{
+                    Monday { 1 }
+                    Tuesday { 2 }
+                    Wednesday { 3 }
+                    Thursday { 4 }
+                    Friday { 5 }
+                    Saturday { 6 }
+                    Sunday { 0 }
+                    default { }
+                }
+            }) -join ","
+    }
+
+    if ($PSBoundParameters.ContainsKey("DaysOfMonth")) {
+        $MonthDays = $DaysOfMonth -join ","
+    }
+    if ($DaylightSavingTime.IsPresent -eq $true) {
+        $DST = 0
+    }
+    else {
+        $DST = 1
+    }
+
+    Switch ($Repeat) {
+        Once {
+            $incrementDescription = "0 0 0 0"
+            $schemaFilterDescription = "* * - * * * * *"
+        }
+        Minute {
+            $incrementDescription = "$RepeatEvery 0 0 0"
+            $schemaFilterDescription = "* * - * * * * *"
+        }
+        Hourly {
+            $incrementDescription = "0 $RepeatEvery 0 0"
+            $schemaFilterDescription = "* * - * * * * *"
+        }
+        Daily {
+            $incrementDescription = "0 0 $RepeatEvery 0"
+            $schemaFilterDescription = "* * - * * * * *"
+        }
+        Weekly {
+            $incrementDescription = "0 0 1 0"
+            $schemaFilterDescription = "* * - $WeekDays $RepeatEvery * * *"
+        }
+        Monthly {
+            $incrementDescription = "0 0 1 0"
+            $schemaFilterDescription = "* * - * * $MonthDays * *"
+        }
+    }
+
+    if ($PSBoundParameters.ContainsKey("Name") -eq $false) {
+        $name = "$repeat"
+    }
+
+    if ($PSCmdlet.ParameterSetName -eq "TaskID") {
+        $filter = "id eq $ReloadTaskID"
+    }
+    if ($PSCmdlet.ParameterSetName -eq "TaskName") {
+        $filter = "name eq '$ReloadTaskName'"
+    }
+
+    try {
+        $reloadtask = Invoke-QlikGet "/qrs/task" -filter $filter
+        if ($Null -eq $reloadtask) {
+            throw
+        }
+    }
+    catch {
+        Write-Error -Message "Could not find Specified Reload Task"
+        break
+    }
+
+    $TaskEvent = [pscustomobject] @{
+        name = "$($Name)"
+        timezone = "$($timezone)"
+        daylightSavingTime = $DST
+        startDate = $StartDate
+        expirationDate = $expirationDate
+        schemaFilterDescription = @($schemaFilterDescription)
+        incrementDescription = $incrementDescription
+        incrementOption = 1
+        Integer = $null
+        reloadTask = ""
+        userSyncTask = ""
+        externalProgramTask = ""
+    }
+    switch ($reloadtask.taskType) {
+        0 {
+            $TaskEvent.reloadTask = $reloadtask
+        }
+        1 {
+            $TaskEvent.externalProgramTask = $reloadtask
+        }
+    }
+
+    try	{
+        $json = $TaskEvent | ConvertTo-Json -Compress -Depth 10 -Verbose
+        $QSevent = Invoke-QlikPost /qrs/schemaevent $json
+    }
+    catch {
+        Write-Error -Message "Unable to create Reload Task event"
+        break
+    }
+
+    return $QSevent
+}
+
+Function Remove-QlikTaskSchedule {
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [guid]$ID
+    )
+    Invoke-QlikDelete "/qrs/schemaevent/$ID"
+}
+
+
+Function Get-QlikTaskSchedule {
+
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    param
+    (
+        [string]$Name,
+        [Parameter(ParameterSetName = 'TaskID',
+            Mandatory = $true)]
+        [string]$ReloadTaskID,
+        [Parameter(ParameterSetName = 'TaskName',
+            Mandatory = $true)]
+        [string]$ReloadTaskName,
+        [switch]$Full
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq "TaskID") {
+        $filter = "id eq $ReloadTaskID"
+    }
+    if ($PSCmdlet.ParameterSetName -eq "TaskName") {
+        $filter = "name eq '$ReloadTaskName'"
+    }
+    if ($PSCmdlet.ParameterSetName -ne "Default") {
+        try {
+            $reloadtasks = Invoke-QlikGet "/qrs/task" -filter $filter
+            if ($Null -eq $reloadtasks) {
+                throw
+            }
+        }
+        catch {
+            Write-Error -Message "Could not find Specified Reload Task"
+            break
+        }
+
+        $schemaeventfilters = foreach ($reloadtask in $reloadtasks) {
+            switch ($reloadtask.taskType) {
+                0 {
+                    "reloadTask.id eq $($reloadtask.id)"
+                }
+                1 {
+                    "externalProgramTask.id eq $($reloadtask.id)"
+                }
+            }
+        }
+        $schemaeventfilter = $schemaeventfilters -join " or "
+    }
+
+    if ($Name.Length -gt 0) {
+        if ($Name.Contains('*')) {
+
+            [string[]]$NameParts = $Name.Split('*') | Where-Object {
+                $_.Length -gt 0
+            }
+
+            if ($NameParts.Count -gt 1) {
+                if (!($Name.StartsWith('*'))) {
+                    $NameParts[0] = "name sw '$($NameParts[0])'"
+                }
+                else {
+                    $NameParts[0] = "name ew '$($NameParts[0])'"
+                }
+
+                if (!($Name.EndsWith('*'))) {
+                    $NameParts[-1] = "name ew '$($NameParts[-1])'"
+                }
+                else {
+                    $NameParts[-1] = "name so '$($NameParts[-1])'"
+                }
+                for ([int]$I = 1; $I -lt (($NameParts | Measure-Object).Count - 1); $I++) {
+                    $NameParts[$I] = "name so '$($NameParts[$I])'"
+                }
+            }
+            else {
+                if (!($Name.StartsWith('*'))) {
+                    $NameParts[0] = "name sw '$($NameParts[0])'"
+                }
+                else {
+                    $NameParts[0] = "name ew '$($NameParts[0])'"
+                }
+            }
+            $NameFilter = $NameParts -join " and "
+        }
+        else {
+            $NameFilter = "name eq '$Name'"
+        }
+
+        if ($schemaeventfilter.Length -gt 0) {
+            $schemaeventfilter = "$schemaeventfilter and $NameFilter"
+        }
+        else {
+            $schemaeventfilter = $NameFilter
+        }
+    }
+
+    if ($full.IsPresent -eq $true) {
+        $schemaeventpath = "/qrs/schemaevent/full"
+    }
+    else {
+        $schemaeventpath = "/qrs/schemaevent"
+    }
+    Write-Verbose "$schemaeventpath"
+    Write-Verbose "$schemaeventfilter"
+    Invoke-QlikGet -path $schemaeventpath -filter $schemaeventfilter
 }

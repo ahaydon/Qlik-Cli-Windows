@@ -280,7 +280,7 @@ function Update-QlikProxy {
     )
 
     PROCESS {
-        $proxy = Get-QlikProxy -raw -Id $id
+        $proxy = Get-QlikProxy -raw -id $id
         if ($listenPort) { $proxy.settings.listenPort = $listenPort }
         $proxy.settings.allowHttp = $allowHttp
         if ($unencryptedListenPort) { $proxy.settings.unencryptedListenPort = $unencryptedListenPort }
