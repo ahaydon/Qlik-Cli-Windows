@@ -320,7 +320,7 @@ function New-QlikTaskSchedule {
         [string]$ReloadTaskName
     )
 
-    [string]$StartDate =  $startDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
+    [string]$StartDate = $startDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
     [string]$expirationDate = $expirationDate.ToString("yyyy-MM-ddTHH:mm:ss.000Z");
 
     if ($PSBoundParameters.ContainsKey("DaysOfWeek")) {
@@ -333,7 +333,7 @@ function New-QlikTaskSchedule {
                     Friday { 5 }
                     Saturday { 6 }
                     Sunday { 0 }
-                    default {}
+                    default { }
                 }
             }) -join ","
     }
