@@ -2,7 +2,7 @@ version: 2
 jobs:
   test-unit:
     docker:
-      - image: microsoft/powershell:ubuntu-16.04
+      - image: mcr.microsoft.com/powershell:lts-ubuntu-18.04
     steps:
       - run:
           name: Install Git
@@ -47,11 +47,14 @@ jobs:
 
   publish-powershell-gallery:
     docker:
-      - image: microsoft/powershell:ubuntu-16.04
+      - image: mcr.microsoft.com/powershell:lts-ubuntu-18.04
     steps:
       - run:
           name: Install .Net Core SDK and Git
-          command: apt-get update && apt-get install -y dotnet-sdk-2.1.4 git
+          command: |
+            curl -sL https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -o /tmp/packages-microsoft-prod.deb
+            dpkg -i /tmp/packages-microsoft-prod.deb
+            apt-get update && apt-get install -y dotnet-sdk-3.1 git
       - checkout
       - run:
           name: Update manifest version
