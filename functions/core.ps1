@@ -57,9 +57,12 @@ function CallRestUri {
             if ($null -eq $params.TimeoutSec) {
                 $paramInvokeRestMethod.TimeoutSec = 300
             }
+            $result = Invoke-WebRequest @paramInvokeRestMethod @params
+        }
+        else {
+            $result = Invoke-RestMethod @paramInvokeRestMethod @params
         }
 
-        $result = Invoke-RestMethod @paramInvokeRestMethod @params
         if ($null -ne $webSession) {
             $script:webSessionContainer = $webSession
         }
