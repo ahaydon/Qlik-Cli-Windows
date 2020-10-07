@@ -28,7 +28,7 @@ function Import-QlikExtension {
     PROCESS {
         $Path = "/qrs/extension/upload"
         if ($Password -is [System.Security.SecureString]) {
-            $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
+            $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
         }
         elseif ($Password) {
             Write-Warning -Message "Use of string password is deprecated, please use SecureString instead."
