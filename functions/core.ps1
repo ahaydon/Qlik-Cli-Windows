@@ -57,7 +57,10 @@ function CallRestUri {
             if ($null -eq $params.TimeoutSec) {
                 $paramInvokeRestMethod.TimeoutSec = 300
             }
-            $result = Invoke-WebRequest @paramInvokeRestMethod @params
+            $result = Invoke-WebRequest @paramInvokeRestMethod @params -UseBasicParsing
+            if ($result.Headers -and $result.Headers['Content-Type'] -like 'application/json;*') {
+                $result = $result.Content | ConvertFrom-Json
+            }
         }
         else {
             $result = Invoke-RestMethod @paramInvokeRestMethod @params
