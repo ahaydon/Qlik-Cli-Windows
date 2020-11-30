@@ -71,7 +71,43 @@ function Update-QlikEngine {
         [string]$documentDirectory,
         [Int]$documentTimeout,
         [int]$autosaveInterval,
-        [int]$genericUndoBufferMaxSize
+        [int]$genericUndoBufferMaxSize,
+
+        [ValidateRange(0, 5)]
+        [int]$auditActivityLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$auditSecurityLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$systemLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$externalServicesLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$qixPerformanceLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$serviceLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$httpTrafficLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$auditLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$trafficLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$sessionLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$performanceLogVerbosity,
+
+        [ValidateRange(0, 5)]
+        [int]$sseLogVerbosity
     )
 
     PROCESS {
@@ -127,6 +163,42 @@ function Update-QlikEngine {
         }
         if ($genericUndoBufferMaxSize) {
             $engine.settings.genericUndoBufferMaxSize = $genericUndoBufferMaxSize
+        }
+        if ($PSBoundParameters.ContainsKey('auditActivityLogVerbosity')) {
+            $engine.settings.auditActivityLogVerbosity = $auditActivityLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('auditSecurityLogVerbosity')) {
+            $engine.settings.auditSecurityLogVerbosity = $auditSecurityLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('systemLogVerbosity')) {
+            $engine.settings.systemLogVerbosity = $systemLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('externalServicesLogVerbosity')) {
+            $engine.settings.externalServicesLogVerbosity = $externalServicesLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('qixPerformanceLogVerbosity')) {
+            $engine.settings.qixPerformanceLogVerbosity = $qixPerformanceLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('serviceLogVerbosity')) {
+            $engine.settings.serviceLogVerbosity = $serviceLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('httpTrafficLogVerbosity')) {
+            $engine.settings.httpTrafficLogVerbosity = $httpTrafficLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('auditLogVerbosity')) {
+            $engine.settings.auditLogVerbosity = $auditLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('trafficLogVerbosity')) {
+            $engine.settings.trafficLogVerbosity = $trafficLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('sessionLogVerbosity')) {
+            $engine.settings.sessionLogVerbosity = $sessionLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('performanceLogVerbosity')) {
+            $engine.settings.performanceLogVerbosity = $performanceLogVerbosity
+        }
+        if ($PSBoundParameters.ContainsKey('sseLogVerbosity')) {
+            $engine.settings.sseLogVerbosity = $sseLogVerbosity
         }
         $json = $engine | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut -path "/qrs/engineservice/$id" -body $json
