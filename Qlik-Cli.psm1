@@ -1,4 +1,4 @@
-﻿Add-Type -AssemblyName System.Web
+Add-Type -AssemblyName System.Web
 
 <#
 	.SYNOPSIS
@@ -289,16 +289,28 @@ function Restore-QlikSnapshot {
 function Update-QlikOdag {
     [cmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelinebyPropertyName = $true, Position = 0)]
+        [parameter(Position = 0)]
         [Bool]$enabled,
-        [int]$maxConcurrentRequests
+        [switch]$dynamicViewEnabled,
+        [int]$maxConcurrentRequests,
+
+        [ValidateRange(0, 6)]
+        [int]$logLevel,
+
+        [int]$purgeOlderThan,
+        [int]$anonymousAppCleanup
     )
     PROCESS {
         $rawOutput = $true
         $id = $(Invoke-QlikGet "/qrs/odagservice").id
         $odag = Invoke-QlikGet "/qrs/odagservice/$id"
-        $odag.settings.enabled = $enabled
-        If ($maxConcurrentRequests) { $odag.settings.maxConcurrentRequests = $maxConcurrentRequests }
+        if ($PSBoundParameters.ContainsKey('enabled')) { $odag.settings.enabled = $enabled }
+        if ($PSBoundParameters.ContainsKey('dynamicViewEnabled')) { $odag.settings.dynamicViewEnabled = $dynamicViewEnabled.IsPresent }
+        if ($PSBoundParameters.ContainsKey('maxConcurrentRequests')) { $odag.settings.maxConcurrentRequests = $maxConcurrentRequests }
+        if ($PSBoundParameters.ContainsKey('logLevel')) { $odag.settings.logLevel = $logLevel }
+        if ($PSBoundParameters.ContainsKey('purgeOlderThan')) { $odag.settings.purgeOlderThan = $purgeOlderThan }
+        if ($PSBoundParameters.ContainsKey('anonymousAppCleanup')) { $odag.settings.anonymousAppCleanup = $anonymousAppCleanup }
+
         $json = $odag | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut "/qrs/odagservice/$id" $json
     }
