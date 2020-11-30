@@ -34,7 +34,10 @@ function Update-QlikServiceCluster {
         [string] $connector32RootFolder,
         [string] $connector64RootFolder,
         [string] $archivedLogsRootFolder,
-        [int] $failoverTimeout
+        [int] $failoverTimeout,
+        [switch] $enableEncryptQvf,
+        [switch] $enableEncryptQvd,
+        [string] $encryptionKeyThumbprint
     )
 
     process {
@@ -51,6 +54,11 @@ function Update-QlikServiceCluster {
         if ($connector64RootFolder) { $sp.connector64RootFolder = $connector64RootFolder }
         if ($archivedLogsRootFolder) { $sp.archivedLogsRootFolder = $archivedLogsRootFolder }
         if ($failoverTimeout) { $sp.failoverTimeout = $failoverTimeout }
+        if ($PSBoundParameters.ContainsKey("enableEncryptQvf")) { $cluster.settings.encryption.enableEncryptQvf = $enableEncryptQvf.IsPresent }
+        if ($PSBoundParameters.ContainsKey("enableEncryptQvd")) { $cluster.settings.encryption.enableEncryptQvd = $enableEncryptQvd.IsPresent }
+        if ($PSBoundParameters.ContainsKey("encryptionKeyThumbprint")) {
+            $cluster.settings.encryption.encryptionKeyThumbprint = $encryptionKeyThumbprint
+        }
 
         $json = $cluster | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut /qrs/ServiceCluster/$id $json
