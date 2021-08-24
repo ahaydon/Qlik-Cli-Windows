@@ -69,7 +69,7 @@ function New-QlikRule {
         [alias("filter")]
         [string]$resourceFilter,
 
-        [ValidateSet("hub", "qmc", "both", "BothQlikSenseAndQMC")]
+        [ValidateSet("hub", "qmc", "both", "BothQlikSenseAndQMC", "QlikSenseOnly", "QMCOnly")]
         [alias("context")]
         [string]$rulecontext = "both",
 
