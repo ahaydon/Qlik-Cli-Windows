@@ -105,8 +105,6 @@ function Get-QlikReloadTask {
 function Get-QlikTask {
     [CmdletBinding()]
     param (
-        [parameter(Position = 0)]
-        [string]$id,
         [string]$filter,
         [switch]$full,
         [switch]$raw
@@ -167,8 +165,8 @@ function New-QlikTask {
             };
         }
 
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $task.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $task.task.customProperties = @(GetCustomProperties $customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $task.task.tags = @(GetTags $tags) }
 
         $json = $task | ConvertTo-Json -Compress -Depth 10
 

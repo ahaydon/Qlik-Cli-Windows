@@ -48,9 +48,9 @@ Describe "New-QlikTask" {
                 -customProperties 'environment=development'
 
             $task.task.name | Should Be 'Reload App'
-            $task.task.tags | Should -HaveCount 1
+            $task.task.tags.Count | Should -BeExactly 1
             $task.task.app.id | Should Be '982a578f-d335-4e4f-81be-c031e6acb780'
-            $task.task.customProperties | Should -HaveCount 1
+            $task.task.customProperties.Count | Should -BeExactly 1
 
             Assert-VerifiableMock
         }
