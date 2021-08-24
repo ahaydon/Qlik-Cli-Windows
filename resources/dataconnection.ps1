@@ -55,7 +55,7 @@ function New-QlikDataConnection {
             Write-Warning "Use of username/password parameters is deprecated, please use Credential instead."
         }
         if ($Credential) {
-            $username = $Credential.GetNetworkCredential().Username
+            $username = $Credential.Username
             $password = $Credential.GetNetworkCredential().Password
         }
         if ($password.Trim().Length -gt 0) {
@@ -136,7 +136,7 @@ function Update-QlikDataConnection {
             $qdc.connectionstring = $ConnectionString
         }
         if ( $Credential ) {
-            $qdc.username = $Credential.GetNetworkCredential().Username
+            $qdc.username = $Credential.Username
             if ($qdc.psobject.Properties.name -contains "password") {
                 $qdc.password = $Credential.GetNetworkCredential().Password
             }

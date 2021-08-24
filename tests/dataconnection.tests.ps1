@@ -49,6 +49,22 @@ Describe "New-QlikDataConnection" {
         }
     }
 
+    Context 'Username' {
+        It 'should include the domain prefix if provided' {
+            $password = ConvertTo-SecureString -String 'password' -AsPlainText -Force
+            $credential = New-Object System.Management.Automation.PSCredential("domain\username", $password)
+            $dc = New-QlikDataConnection `
+                -name 'My Connection' `
+                -type Folder `
+                -connectionstring 'C:\Data' `
+                -Credential $credential
+
+            $dc.username | Should Be 'domain\username'
+
+            Assert-VerifiableMock
+        }
+    }
+
     Context 'tags' {
         Mock Get-QlikTag {
             return @(@{
@@ -113,6 +129,20 @@ Describe "Update-QlikDataConnection" {
                 -Credential $credential
 
             $dc.password | Should Be 'password'
+
+            Assert-VerifiableMock
+        }
+    }
+
+    Context 'Username' {
+        It 'should include the domain prefix if provided' {
+            $password = ConvertTo-SecureString -String 'password' -AsPlainText -Force
+            $credential = New-Object System.Management.Automation.PSCredential("domain\username", $password)
+            $dc = Update-QlikDataConnection `
+                -id '158e743b-c59f-490e-900c-b57e66cf8185' `
+                -Credential $credential
+
+            $dc.username | Should Be 'domain\username'
 
             Assert-VerifiableMock
         }
