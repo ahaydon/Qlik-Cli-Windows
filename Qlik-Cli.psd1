@@ -95,10 +95,10 @@
             Tags = 'Qlik', 'Sense', 'PSEdition_Desktop', 'PSEdition_Core', 'Windows', 'Linux', 'MacOS'
 
             # A URL to the license for this module.
-            LicenseUri = 'https://github.com/ahaydon/Qlik-Cli/blob/master/LICENSE'
+            LicenseUri = 'https://github.com/ahaydon/Qlik-Cli-Windows/blob/master/LICENSE'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/ahaydon/Qlik-Cli'
+            ProjectUri = 'https://github.com/ahaydon/Qlik-Cli-Windows'
 
             # A URL to an icon representing this module.
             # IconUri = ''
