@@ -1,0 +1,2 @@
+# PlatyPS always uses CRLF
+docs/*.md text eol=crlf

@@ -2,8 +2,9 @@
 param()
 
 Get-Module Qlik-Cli | Remove-Module -Force
-Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\extension.ps1").Path
+$ProjectRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+Import-Module (Join-Path $ProjectRoot 'Qlik-Cli.psm1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'extension.ps1')
 
 Describe "Import-QlikExtension" {
     Mock Invoke-QlikUpload -Verifiable {

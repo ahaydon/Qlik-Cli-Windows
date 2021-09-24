@@ -1,16 +1,17 @@
 ﻿Get-Module Qlik-Cli | Remove-Module -Force
-Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\userdirectory.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
+$ProjectRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+Import-Module (Join-Path $ProjectRoot 'Qlik-Cli.psm1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'stream.ps1')
+. (Join-Path $ProjectRoot 'functions' -AdditionalChildPath 'helper.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'tag.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'customproperty.ps1')
 
-Describe "New-QlikUserDirectory" {
+Describe "New-QlikStream" {
     Mock Invoke-QlikPost -Verifiable {
         return ConvertFrom-Json $body
     }
 
-    Context 'Create user directory from parameters' {
+    Context 'Create rule from parameters' {
         Mock Get-QlikTag {
             return @(@{
                     id = '177cf33f-1ace-41e8-8382-1c443a51352d'
@@ -23,28 +24,28 @@ Describe "New-QlikUserDirectory" {
         }
 
         It 'should create a stream with all parameters' {
-            $ud = New-QlikUserDirectory `
-                -name 'AD' `
+            $stream = New-QlikStream `
+                -name 'Developers' `
                 -tags 'testing' `
                 -customProperties 'environment=development'
 
-            $ud.name | Should Be 'AD'
-            $ud.tags | Should -HaveCount 1
-            $ud.customProperties | Should -HaveCount 1
+            $stream.name | Should Be 'Developers'
+            $stream.tags | Should -HaveCount 1
+            $stream.customProperties | Should -HaveCount 1
 
             Assert-VerifiableMock
         }
     }
 }
 
-Describe "Update-QlikUserDirectory" {
+Describe "Update-QlikStream" {
     Mock Invoke-QlikPut -Verifiable {
         return ConvertFrom-Json $body
     }
 
-    Mock Get-QlikUserDirectory {
+    Mock Get-QlikStream {
         return @{
-            id = '2c317485-1a4a-4112-9bef-e0639262464a'
+            id = 'e46cc4b4-b248-401a-a2fe-b3170532cc00'
             tags = @(@{
                     id = '1b029edc-9c86-4e01-8c39-a10b1d9c4424'
                 })
@@ -60,20 +61,20 @@ Describe "Update-QlikUserDirectory" {
         }
 
         It 'should be possible to remove all tags' {
-            $user = Update-QlikUserDirectory `
-                -id '2c317485-1a4a-4112-9bef-e0639262464a' `
+            $stream = Update-QlikStream `
+                -id 'e46cc4b4-b248-401a-a2fe-b3170532cc00' `
                 -tags $null
 
-            $user.tags | Should -BeNullOrEmpty
+            $stream.tags | Should -BeNullOrEmpty
 
             Assert-VerifiableMock
         }
 
         It 'should not remove tags if parameter not provided' {
-            $user = Update-QlikUserDirectory `
-                -id '2c317485-1a4a-4112-9bef-e0639262464a'
+            $stream = Update-QlikStream `
+                -id 'e46cc4b4-b248-401a-a2fe-b3170532cc00'
 
-            $user.tags | Should -HaveCount 1
+            $stream.tags | Should -HaveCount 1
 
             Assert-VerifiableMock
         }
@@ -85,20 +86,20 @@ Describe "Update-QlikUserDirectory" {
         }
 
         It 'should be possible to remove all custom properties' {
-            $user = Update-QlikUserDirectory `
-                -id '2c317485-1a4a-4112-9bef-e0639262464a' `
+            $stream = Update-QlikStream `
+                -id 'e46cc4b4-b248-401a-a2fe-b3170532cc00' `
                 -customProperties $null
 
-            $user.customProperties | Should -BeNullOrEmpty
+            $stream.customProperties | Should -BeNullOrEmpty
 
             Assert-VerifiableMock
         }
 
         It 'should not remove custom properties if parameter not provided' {
-            $user = Update-QlikUserDirectory `
-                -id '2c317485-1a4a-4112-9bef-e0639262464a'
+            $stream = Update-QlikStream `
+                -id 'e46cc4b4-b248-401a-a2fe-b3170532cc00'
 
-            $user.customProperties | Should -HaveCount 1
+            $stream.customProperties | Should -HaveCount 1
 
             Assert-VerifiableMock
         }

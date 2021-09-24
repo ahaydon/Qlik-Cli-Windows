@@ -12,7 +12,9 @@ New-Item `
     -Path /output/test-results/pester
 
 Invoke-Pester `
+    -Script ./tests/unit/ `
     -EnableExit `
+    -OutputFormat JUnitXml `
     -OutputFile /output/test-results/pester/results.xml
 
 $mod = Import-LocalizedData -FileName Qlik-Cli.psd1 -BaseDirectory ./

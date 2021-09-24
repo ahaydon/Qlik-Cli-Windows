@@ -1,9 +1,10 @@
 ﻿Get-Module Qlik-Cli | Remove-Module -Force
-Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\rule.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
+$ProjectRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+Import-Module (Join-Path $ProjectRoot 'Qlik-Cli.psm1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'rule.ps1')
+. (Join-Path $ProjectRoot 'functions' -AdditionalChildPath 'helper.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'tag.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'customproperty.ps1')
 
 Describe "New-QlikRule" {
     Mock Invoke-QlikPost -Verifiable {

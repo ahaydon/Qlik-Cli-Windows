@@ -1,5 +1,6 @@
 ﻿Get-Module Qlik-Cli | Remove-Module -Force
-Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psd1").Path
+$ProjectRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+Import-Module (Join-Path $ProjectRoot 'Qlik-Cli.psd1')
 
 Describe 'CallRestUri' {
     InModuleScope Qlik-Cli {

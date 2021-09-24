@@ -1,9 +1,10 @@
 ﻿Get-Module Qlik-Cli | Remove-Module -Force
-Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\app.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\user.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\functions\core.ps1").Path
+$ProjectRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+Import-Module (Join-Path $ProjectRoot 'Qlik-Cli.psm1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'app.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'user.ps1')
+. (Join-Path $ProjectRoot 'functions' -AdditionalChildPath 'helper.ps1')
+. (Join-Path $ProjectRoot 'functions' -AdditionalChildPath 'core.ps1')
 
 Describe 'GetUser function' {
     Mock Invoke-QlikPut -Verifiable {

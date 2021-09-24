@@ -1,0 +1,64 @@
+---
+driver:
+  name: vagrant
+  linked_clone: true
+  network:
+    - ["forwarded_port", {guest: 443, host: 8443, auto_correct: true}]
+    - ["forwarded_port", {guest: 4242, host: 4242, auto_correct: true}]
+
+lifecycle:
+  pre_verify:
+    - pwsh -Command "Invoke-psake Build -parameters @{version='1.99.999-alpha1'}"
+
+provisioner:
+  name: shell
+  script: kitchen/bootstrap.ps1
+  arguments:
+    - -QlikSenseSetupUri
+    - https://da3hntz84uekx.cloudfront.net/QlikSense/14.28/0/_MSI/Qlik_Sense_setup.exe
+    - -QlikSenseLocalPath
+    - '"C:\\kitchen-cache\\Qlik Sense August 2021\\Qlik_Sense_setup.exe"'
+
+verifier:
+  name: pester
+  test_folder: tests/integration
+  pester_install:
+    # Version 5 and later does no yet work with test kitchen
+    MaximumVersion: '4.99.999'
+  bootstrap:
+    repository_url: https://www.powershellgallery.com/api/v2
+    modules:
+      - PackageManagement
+      - PowerShellGet
+  copy_folders:
+    - tests/data
+    - out/Qlik-Cli
+
+platforms:
+  - name: windows-2019
+    os_type: windows
+    shell: powershell
+    transport:
+      name: winrm
+    driver:
+      box: qlik/win2k19
+  - name: windows-2016
+    os_type: windows
+    shell: powershell
+    transport:
+      name: winrm
+    driver:
+      box: qlik/win2k16
+  - name: windows-2012
+    os_type: windows
+    shell: powershell
+    transport:
+      name: winrm
+    driver:
+      box: qlik/win2k12
+    verifier:
+      remove_builtin_powershellget: false
+      remove_builtin_pester: false
+
+suites:
+  - name: default

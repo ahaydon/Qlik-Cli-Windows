@@ -120,6 +120,7 @@ workflows:
             tags:
               only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
+          context: powershell-gallery
           requires:
             - test-unit
           filters:
@@ -128,6 +129,7 @@ workflows:
             tags:
               only: /^v\d+\.\d+\.\d+$/
       - publish-github-release:
+          context: github
           requires:
             - test-unit
           filters:

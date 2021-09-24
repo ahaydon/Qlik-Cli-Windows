@@ -4,9 +4,14 @@ packer_cache/
 # For built boxes
 *.box
 license.json
+license.psd1
 .vs
 .vagrant
 
 # keys
 *.pfx
 *.pem
+
+out/
+.kitchen/
+testresults/

@@ -2,12 +2,13 @@
 param()
 
 Get-Module Qlik-Cli | Remove-Module -Force
-Import-Module (Resolve-Path "$PSScriptRoot\..\Qlik-Cli.psm1").Path
-. (Resolve-Path "$PSScriptRoot\..\functions\core.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\dataconnection.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\functions\helper.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\tag.ps1").Path
-. (Resolve-Path "$PSScriptRoot\..\resources\customproperty.ps1").Path
+$ProjectRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+Import-Module (Join-Path $ProjectRoot 'Qlik-Cli.psm1')
+. (Join-Path $ProjectRoot 'functions' -AdditionalChildPath 'core.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'dataconnection.ps1')
+. (Join-Path $ProjectRoot 'functions' -AdditionalChildPath 'helper.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'tag.ps1')
+. (Join-Path $ProjectRoot 'resources' -AdditionalChildPath 'customproperty.ps1')
 
 Describe "New-QlikDataConnection" {
     Mock Invoke-QlikPost -Verifiable {
