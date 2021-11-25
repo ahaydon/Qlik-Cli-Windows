@@ -14,8 +14,7 @@ Create a task trigger
 
 ### CompositeEvent
 ```
-Add-QlikTrigger [-taskId] <String> [-name <String>] [-OnSuccess <String[]>] [-OnFail <String[]>]
- [<CommonParameters>]
+Add-QlikTrigger [-taskId] <String> [-name <String>] [-OnSuccess <String[]>] [<CommonParameters>]
 ```
 
 ### SchemaEvent
@@ -51,21 +50,6 @@ PS C:\> Get-QlikTask -filter "name eq 'Extract to QVD'" | Add-QlikTrigger -name 
 This command creates a trigger for the 'Extract to QVD' task that triggers at the current time every day.
 
 ## PARAMETERS
-
-### -OnFail
-IDs of tasks for which a failure should invoke this trigger
-
-```yaml
-Type: String[]
-Parameter Sets: CompositeEvent
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
 
 ### -OnSuccess
 IDs of tasks for which a success should invoke this trigger

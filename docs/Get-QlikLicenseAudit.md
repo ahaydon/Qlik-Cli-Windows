@@ -13,7 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-QlikLicenseAudit [[-resourceType] <String>] [[-resourceFilter] <String>] [[-userFilter] <String>]
+Get-QlikLicenseAudit [-resourceType] <String> [[-resourceFilter] <String>] [[-userFilter] <String>]
  [[-environmentAttributes] <String>] [[-userSkip] <Int32>] [[-userTake] <Int32>] [[-resourceSkip] <Int32>]
  [[-resourceTake] <Int32>] [-includeNonGrantingRules] [[-resourceId] <String>] [-raw] [<CommonParameters>]
 ```
@@ -145,7 +145,7 @@ Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: False
+Required: True
 Position: 0
 Default value: None
 Accept pipeline input: False

@@ -13,7 +13,7 @@ Gets tasks of all types (reload, user directory sync).
 ## SYNTAX
 
 ```
-Get-QlikTask [[-id] <String>] [-filter <String>] [-full] [-raw] [<CommonParameters>]
+Get-QlikTask [[-filter] <String>] [-full] [-raw] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -39,7 +39,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -55,21 +55,6 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -id
-{{ Fill id Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

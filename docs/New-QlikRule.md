@@ -175,7 +175,7 @@ Accept wildcard characters: False
 Type: String
 Parameter Sets: (All)
 Aliases: context
-Accepted values: hub, qmc, both, BothQlikSenseAndQMC
+Accepted values: hub, qmc, both, BothQlikSenseAndQMC, QlikSenseOnly, QMCOnly
 
 Required: False
 Position: 5

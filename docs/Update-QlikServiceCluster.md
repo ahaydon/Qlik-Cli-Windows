@@ -16,7 +16,8 @@ Updates the configuration of the cluster.
 Update-QlikServiceCluster [-id] <Guid> [-name <String>] [-persistenceType <Int32>] [-persistenceMode <Int32>]
  [-rootFolder <String>] [-appFolder <String>] [-staticContentRootFolder <String>]
  [-connector32RootFolder <String>] [-connector64RootFolder <String>] [-archivedLogsRootFolder <String>]
- [-failoverTimeout <Int32>] [<CommonParameters>]
+ [-failoverTimeout <Int32>] [-enableEncryptQvf] [-enableEncryptQvd] [-encryptionKeyThumbprint <String>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -80,6 +81,51 @@ Accept wildcard characters: False
 
 ### -connector64RootFolder
 {{ Fill connector64RootFolder Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -enableEncryptQvd
+{{ Fill enableEncryptQvd Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -enableEncryptQvf
+{{ Fill enableEncryptQvf Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -encryptionKeyThumbprint
+{{ Fill encryptionKeyThumbprint Description }}
 
 ```yaml
 Type: String
