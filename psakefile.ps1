@@ -6,9 +6,9 @@ $InformationPreference = 'Continue'
 
 Properties {
     $project_name = 'Qlik-Cli'
-    $output = "out/$project_name"
+    $output = "output/$project_name"
     $winrm_port = 55986
-    $pkg_path = './out'
+    $pkg_path = './output'
     $qlik_context = 'ManagementAccess'
     $qlik_user = 'INTERNAL\sa_api'
 }
