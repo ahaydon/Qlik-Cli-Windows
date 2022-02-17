@@ -209,8 +209,8 @@ function Update-QlikApp {
 
         [string]$name,
         [string]$description,
-        [string[]]$customProperties,
-        [string[]]$tags,
+        [object[]]$customProperties,
+        [object[]]$tags,
         [object]$owner,
         [string]$ownername,
         [string]$ownerId,
@@ -222,8 +222,12 @@ function Update-QlikApp {
         $app = Get-QlikApp $id -raw
         If ( $name ) { $app.name = $name }
         If ( $description ) { $app.description = $description }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $app.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $app.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("customProperties")) {
+            $app.customProperties = @(GetCustomProperties $customProperties $app.customProperties)
+        }
+        if ($PSBoundParameters.ContainsKey("tags")) {
+            $app.tags = @(GetTags $tags $app.tags)
+        }
 
         If ( $ownername ) {
             Write-Warning -Message "Use of ownername is deprecated, please use owner instead."
