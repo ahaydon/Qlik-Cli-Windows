@@ -75,7 +75,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - output/Qlik-Cli.zip
+            - output
       - store_artifacts:
           path: output/Qlik-Cli.zip
           destination: Qlik-Cli.zip
@@ -95,7 +95,7 @@ jobs:
       - image: cibuilds/github:latest
     steps:
       - attach_workspace:
-          at: /output/workspace
+          at: /workspace
       - run:
           name: Publish release on GitHub
           command: |
@@ -105,7 +105,7 @@ jobs:
                 -c ${CIRCLE_SHA1} \
                 -replace \
                 ${CIRCLE_TAG} \
-                /output/Qlik-Cli.zip
+                /workspace/output/Qlik-Cli.zip
 
 workflows:
   version: 2
