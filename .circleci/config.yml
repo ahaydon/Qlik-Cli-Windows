@@ -1,95 +1,101 @@
-version: 2
+version: 2.1
+executors:
+  powershell:
+    docker:
+      - image: mcr.microsoft.com/dotnet/sdk:5.0.400-alpine3.13
+    shell: /usr/bin/pwsh
+
 jobs:
   test-unit:
-    docker:
-      - image: mcr.microsoft.com/powershell:lts-ubuntu-18.04
+    executor: powershell
     steps:
-      - run:
-          name: Install Git
-          command: apt-get update && apt-get install -y git
       - checkout
       - run:
-          name: Test module
-          command: pwsh -File ./.circleci/scripts/test-module.ps1
+          name: Install Pester
+          command: |
+            $ProgressPreference = 'SilentlyContinue'
+            Install-Module Pester -Force -RequiredVersion 4.10.1
+      - run:
+          name: Run Pester unit tests
+          command: |
+            New-Item `
+              -ItemType Directory `
+              -Path /output/test-results/pester | Out-Null
+
+            Invoke-Pester `
+              -Script ./tests/unit/ `
+              -EnableExit `
+              -OutputFormat JUnitXml `
+              -OutputFile /output/test-results/pester/results.xml
       - store_test_results:
           path: /output/test-results
       - store_artifacts:
           path: /output/test-results
           destination: test-results
-      - persist_to_workspace:
-          root: /output/workspace/
-          paths:
-            - ./*
 
   quality-check:
-    docker:
-      - image: mcr.microsoft.com/powershell:lts-ubuntu-18.04
+    executor: powershell
     steps:
-      - run:
-          name: Install Git
-          command: apt-get update && apt-get install -y git
       - checkout
       - run:
-          name: Install PowerShell modules
-          shell: pwsh
+          name: Install PSScriptAnalyzer
           command: |
             $ProgressPreference = 'SilentlyContinue'
             Install-Module PSScriptAnalyzer -Force -RequiredVersion 1.18.3 | Out-Null
             Import-Module PSScriptAnalyzer
       - run:
           name: Check best practices
-          shell: pwsh
           command: Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary -EnableExit
       - run:
           name: Check code formatting
-          shell: pwsh
           command: Invoke-ScriptAnalyzer -Path . -Recurse -Settings CodeFormatting -ExcludeRule PSAlignAssignmentStatement -ReportSummary -EnableExit
 
-  publish-powershell-gallery:
-    docker:
-      - image: mcr.microsoft.com/powershell:lts-ubuntu-18.04
+  build:
+    executor: powershell
     steps:
-      - run:
-          name: Install .Net Core SDK and Git
-          command: |
-            curl -sL https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -o /tmp/packages-microsoft-prod.deb
-            dpkg -i /tmp/packages-microsoft-prod.deb
-            apt-get update && apt-get install -y dotnet-sdk-3.1 git
       - checkout
       - run:
-          name: Update manifest version
-          shell: pwsh
+          name: Install Psake
           command: |
-            Import-Module ./Qlik-Cli.psd1
-            $mod = (Get-Module -Name Qlik-Cli)
-            $functions = $mod.ExportedFunctions.Keys
-            $nested = $mod.NestedModules.Path | Resolve-Path -Relative
-            Update-ModuleManifest `
-              -Path ./Qlik-Cli.psd1 `
-              -ModuleVersion $env:CIRCLE_TAG.Substring(1) `
-              -FunctionsToExport $functions `
-              -NestedModules $nested
+            $ProgressPreference = 'SilentlyContinue'
+            Install-Module Psake -Force | Out-Null
       - run:
-          name: Pre-release checks
-          command: pwsh -File ./.circleci/scripts/pre-release-checks.ps1
+          name: Build
+          command: |
+            $ProgressPreference = 'SilentlyContinue'
+            $ErrorActionPreference = 'Stop'
+            Invoke-psake -taskList Package -parameters @{version="$($env:CIRCLE_TAG.Substring(1))"}
+      - run:
+          name: Check version is later than any published version
+          command: |
+            $ProgressPreference = 'SilentlyContinue'
+            if ((Test-ModuleManifest -Path ./output/Qlik-Cli/Qlik-Cli.psd1).Version -le (Find-Module -Name Qlik-Cli).Version) {
+              Write-Error "Module version must be newer than published version"
+            }
+      - persist_to_workspace:
+          root: .
+          paths:
+            - output
+      - store_artifacts:
+          path: output/Qlik-Cli.zip
+          destination: Qlik-Cli.zip
+
+  publish-powershell-gallery:
+    working_directory: /workspace/output/Qlik-Cli
+    executor: powershell
+    steps:
+      - attach_workspace:
+          at: /workspace
       - run:
           name: Publish module to PowerShell Gallery
-          command: |
-            cd ..
-            mv project qlik-cli
-            cd qlik-cli
-            pwsh -Command 'Publish-Module `
-              -Path ./ `
-              -NuGetApiKey $env:PSG_API_KEY `
-              -Tags Qlik, Sense, Windows `
-              -Verbose'
+          command: Publish-Module -Path ./ -NuGetApiKey $env:PSG_API_KEY -Tags Qlik, Sense, Windows -Verbose
 
   publish-github-release:
     docker:
       - image: cibuilds/github:latest
     steps:
       - attach_workspace:
-          at: /output/workspace
+          at: /workspace
       - run:
           name: Publish release on GitHub
           command: |
@@ -99,7 +105,7 @@ jobs:
                 -c ${CIRCLE_SHA1} \
                 -replace \
                 ${CIRCLE_TAG} \
-                /output/workspace/Qlik-Cli.psm1
+                /workspace/output/Qlik-Cli.zip
 
 workflows:
   version: 2
@@ -107,31 +113,35 @@ workflows:
     jobs:
       - test-unit:
           filters:
-            branches:
-              ignore:
-                - gh-pages
             tags:
               only: /^v\d+\.\d+\.\d+.*/
       - quality-check:
           filters:
+            tags:
+              only: /^v\d+\.\d+\.\d+.*/
+      - build:
+          filters:
             branches:
-              ignore:
-                - gh-pages
+              ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+.*/
       - publish-powershell-gallery:
           context: powershell-gallery
           requires:
             - test-unit
+            - quality-check
+            - build
           filters:
             branches:
               ignore: /.*/
             tags:
-              only: /^v\d+\.\d+\.\d+$/
+              only: /^v\d+\.\d+\.\d+.*/
       - publish-github-release:
           context: github
           requires:
             - test-unit
+            - quality-check
+            - build
           filters:
             branches:
               ignore: /.*/
