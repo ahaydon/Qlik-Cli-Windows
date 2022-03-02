@@ -42,6 +42,7 @@ function New-QlikStream {
         return Invoke-QlikPost '/qrs/stream' $json
     }
 }
+
 function Remove-QlikStream {
     [CmdletBinding()]
     param (
@@ -59,7 +60,7 @@ function Update-QlikStream {
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelinebyPropertyName = $True, Position = 0)]
         [string]$id,
-
+        [string]$name,
         [object]$owner,
         [string[]]$customProperties,
         [string[]]$tags
@@ -67,6 +68,8 @@ function Update-QlikStream {
 
     PROCESS {
         $stream = Get-QlikStream $id -raw
+
+        if ($PSBoundParameters.ContainsKey("name")) { $stream.name = $name }
         if ($PSBoundParameters.ContainsKey("customProperties")) { $stream.customProperties = @(GetCustomProperties $customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $stream.tags = @(GetTags $tags) }
         if ($PSBoundParameters.ContainsKey("owner")) { $stream.owner = GetUser $owner }
