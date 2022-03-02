@@ -40,27 +40,59 @@
     return $objects
 }
 
-function GetCustomProperties($customProperties) {
+function GetCustomProperties($customProperties, $existing) {
     $prop = @(
         $customProperties | Where-Object { $_ } | ForEach-Object {
-            $val = $_.Split("=", 2)
-            $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
-            @{
-                value = ($p.choiceValues -eq $val[1])[0]
-                definition = $p
+            if ($_ -is [ScriptBlock]) {
+                $new = $existing | ForEach-Object $_
+                GetCustomProperties $new
+            }
+            elseif ($_ -is [System.Collections.Hashtable]) {
+                foreach ($key in $_.Keys) {
+                    $p = Get-QlikCustomProperty -filter "name eq '$key'"
+                    if (! $p) {
+                        Write-Warning "Property with name '$key' not found"
+                        continue
+                    }
+                    @{
+                        value = ($p.choiceValues -eq $_.$key)[0]
+                        definition = $p
+                    }
+                }
+            }
+            elseif ($_ -is [System.Management.Automation.PSCustomObject]) {
+                $_
+            }
+            elseif ($_ -is [System.String]) {
+                $val = $_.Split("=", 2)
+                $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+                @{
+                    value = ($p.choiceValues -eq $val[1])[0]
+                    definition = $p
+                }
+            }
+            else {
+                Write-Warning "Unrecognised custom property: $_"
             }
         }
     )
     return $prop
 }
 
-function GetTags($tags) {
+function GetTags($tags, $existing) {
     $prop = @(
         $tags | Where-Object { $_ } | ForEach-Object {
             if ($_ -match $script:guid) {
                 @{ id = $_ }
             }
-            else {
+            elseif ($_ -is [ScriptBlock]) {
+                $new = $existing | ForEach-Object $_
+                GetTags $new
+            }
+            elseif ($_ -is [System.Management.Automation.PSCustomObject]) {
+                $_
+            }
+            elseif ($_ -is [System.String]) {
                 $p = Get-QlikTag -filter "name eq '$_'"
                 if (! $p) {
                     Write-Warning "Tag with name '$_' not found"
@@ -69,6 +101,9 @@ function GetTags($tags) {
                 @{
                     id = $p.id
                 }
+            }
+            else {
+                Write-Warning "Unrecognised tag: $_"
             }
         }
     )
