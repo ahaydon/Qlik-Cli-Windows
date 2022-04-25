@@ -23,7 +23,7 @@ We can also use powershell to download apps that we want to move to another envi
 Get-QlikApp -filter "stream.name eq 'My Stream'" | Export-QlikApp
 ```
 ## Installation
-PowerShell 4.0 is required to run Qlik-Cli. You can use the following command to check the version installed on your system.
+PowerShell 4.0 or later is required to run Qlik-Cli. You can use the following command to check the version installed on your system.
 ```powershell
 $PSVersionTable.PSVersion
 ```
