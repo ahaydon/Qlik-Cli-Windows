@@ -13,7 +13,7 @@ Updates the properties of an app object.
 ## SYNTAX
 
 ```
-Update-QlikObject [-id] <String> [-owner <String>] [-approved <Boolean>] [<CommonParameters>]
+Update-QlikObject [-id] <String> [-name <String>] [-owner <Object>] [-approved <Boolean>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -60,11 +60,26 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
+### -name
+{{ Fill name Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -owner
 {{ Fill owner Description }}
 
 ```yaml
-Type: String
+Type: Object
 Parameter Sets: (All)
 Aliases:
 

@@ -64,17 +64,21 @@ function Update-QlikObject {
     param (
         [parameter(Mandatory = $true, ValueFromPipelinebyPropertyName = $True, Position = 0)]
         [string]$id,
-        [string]$owner,
+		
+		[string]$name,
+        [object]$owner,
         [bool]$approved
     )
 
     PROCESS {
         $obj = Get-QlikObject $id -raw
-        If ($owner) {
-            $obj.owner = GetUser $owner
-        }
-        If ($psBoundParameters.ContainsKey("approved")) { $obj.approved = $approved }
-
+        If ( $name ) { 
+			$obj.name = $name 
+		}
+		If ($psBoundParameters.ContainsKey("approved")) { $obj.approved = $approved }
+		
+		if ($PSBoundParameters.ContainsKey("owner")) { $obj.owner = GetUser $owner }
+		
         $json = $obj | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut "/qrs/app/object/$id" $json
     }
