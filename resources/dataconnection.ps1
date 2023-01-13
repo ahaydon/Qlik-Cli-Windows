@@ -144,8 +144,8 @@ function Update-QlikDataConnection {
                 $qdc | Add-Member -MemberType NoteProperty -Name "password" -Value $($Credential.GetNetworkCredential().Password)
             }
         }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties $qdc.customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $qdc.tags = @(GetTags $tags $qdc.tags) }
         if ($PSBoundParameters.ContainsKey("owner")) { $qdc.owner = GetUser $owner }
 
         $json = $qdc | ConvertTo-Json -Compress -Depth 10

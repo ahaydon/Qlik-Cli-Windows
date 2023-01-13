@@ -160,8 +160,8 @@ function Update-QlikNode {
                 Both { $node.nodePurpose = 2 }
             }
         }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $node.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $node.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $node.customProperties = @(GetCustomProperties $customProperties $node.customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $node.tags = @(GetTags $tags $node.tags) }
         If ( $psBoundParameters.ContainsKey("failoverCandidate") ) {
             $node.failoverCandidate = $failoverCandidate.IsPresent
             if ($failoverCandidate.IsPresent) {

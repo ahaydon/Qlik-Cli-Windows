@@ -242,8 +242,8 @@ function Update-QlikReloadTask {
         If ( $psBoundParameters.ContainsKey("Enabled") ) { $task.enabled = $Enabled }
         If ( $psBoundParameters.ContainsKey("TaskSessionTimeout") ) { $task.taskSessionTimeout = $TaskSessionTimeout }
         If ( $psBoundParameters.ContainsKey("MaxRetries") ) { $task.maxRetries = $MaxRetries }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $task.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $task.customProperties = @(GetCustomProperties $customProperties $task.customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $task.tags = @(GetTags $tags $task.tags) }
 
         $json = $task | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut -path "/qrs/reloadtask/$id" -body $json

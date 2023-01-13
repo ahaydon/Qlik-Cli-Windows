@@ -34,7 +34,6 @@ function New-QlikUserDirectory {
         [string]$configuredError = "",
         [string]$operationalError = "",
         [System.Object[]]$settings = @(),
-        [string[]]$customProperties,
         [string[]]$tags
     )
 
@@ -52,7 +51,6 @@ function New-QlikUserDirectory {
             operationalError = $operationalError;
             settings = $settings
         }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $ud.customProperties = @(GetCustomProperties $customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $ud.tags = @(GetTags $tags) }
         $json = $ud | ConvertTo-Json -Compress -Depth 10
 
@@ -101,7 +99,6 @@ function Update-QlikUserDirectory {
         [string]$ldapFilter,
         [int]$timeout,
         [Int]$pageSize,
-        [string[]]$customProperties,
         [string[]]$tags
     )
 
@@ -136,8 +133,7 @@ function Update-QlikUserDirectory {
         if ($pageSize) {
             ($ud.settings | Where-Object name -EQ 'Page size').value = $pageSize
         }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $ud.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $ud.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $ud.tags = @(GetTags $tags $ud.tags) }
 
         $json = $ud | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut -path "/qrs/userdirectory/$id" -body $json

@@ -70,8 +70,8 @@ function Update-QlikStream {
         $stream = Get-QlikStream $id -raw
 
         if ($PSBoundParameters.ContainsKey("name")) { $stream.name = $name }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $stream.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $stream.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $stream.customProperties = @(GetCustomProperties $customProperties $stream.customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $stream.tags = @(GetTags $tags $stream.tags) }
         if ($PSBoundParameters.ContainsKey("owner")) { $stream.owner = GetUser $owner }
 
         $json = $stream | ConvertTo-Json -Compress -Depth 10

@@ -76,7 +76,6 @@ function New-QlikRule {
         [int64]$actions,
         [string]$comment,
         [switch]$disabled,
-        [string[]]$customProperties,
         [string[]]$tags
     )
 
@@ -94,11 +93,9 @@ function New-QlikRule {
                 comment = $comment;
                 disabled = $disabled.IsPresent;
                 ruleContext = $context;
-                customProperties = @();
                 schemaPath = "SystemRule"
             }
 
-            if ($PSBoundParameters.ContainsKey("customProperties")) { $systemrule.customProperties = @(GetCustomProperties $customProperties) }
             if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags) }
             # category is case-sensitive so convert to Title Case
             $systemrule.category = (Get-Culture).TextInfo.ToTitleCase($category.ToLower())
@@ -152,7 +149,6 @@ function Update-QlikRule {
         [string]$comment,
         [switch]$disabled,
 
-        [string[]]$customProperties,
         [string[]]$tags
     )
 
@@ -172,8 +168,7 @@ function Update-QlikRule {
         If ( $actions ) { $systemrule.actions = $actions }
         If ( $comment ) { $systemrule.comment = $comment }
         If ( $psBoundParameters.ContainsKey("disabled") ) { $systemrule.disabled = $disabled.IsPresent }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $systemrule.customProperties = @(GetCustomProperties $customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags $systemrule.tags) }
 
         $json = $systemrule | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut "/qrs/systemrule/$id" $json
@@ -191,7 +186,6 @@ function New-QlikLicenseRule {
         [string]$Rule,
         [string]$Comment,
         [switch]$Disabled,
-        [string[]]$CustomProperties,
         [string[]]$Tags
     )
     PROCESS	{
@@ -204,11 +198,9 @@ function New-QlikLicenseRule {
             comment = $Comment;
             disabled = $Disabled.IsPresent;
             ruleContext = 1;
-            customProperties = @();
             schemaPath = "SystemRule"
             category = "License"
         }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $systemrule.customProperties = @(GetCustomProperties $customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $systemrule.tags = @(GetTags $tags) }
         $AccessGroup = @{
             name = $Name

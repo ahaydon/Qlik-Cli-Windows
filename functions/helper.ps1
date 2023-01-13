@@ -1,4 +1,6 @@
 ﻿function FormatOutput($objects, $schemaPath) {
+    $isDate = "^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$"
+
     Write-Debug "Resolving enums"
     If ( !$Script:enums ) {
         $rawOutput = $true
@@ -49,7 +51,7 @@ function GetCustomProperties($customProperties, $existing) {
             }
             elseif ($_ -is [System.Collections.Hashtable]) {
                 foreach ($key in $_.Keys) {
-                    $p = Get-QlikCustomProperty -filter "name eq '$key'"
+                    $p = Get-QlikCustomProperty -filter "name eq '$key'" -raw
                     if (! $p) {
                         Write-Warning "Property with name '$key' not found"
                         continue
@@ -65,7 +67,15 @@ function GetCustomProperties($customProperties, $existing) {
             }
             elseif ($_ -is [System.String]) {
                 $val = $_.Split("=", 2)
-                $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'"
+                $p = Get-QlikCustomProperty -filter "name eq '$($val[0])'" -raw
+                if (! $p) {
+                    Write-Warning "Property with name '$($val[0])' not found"
+                    return
+                }
+                if ($p.choiceValues -notcontains $val[1]) {
+                    Write-Warning "Value '$($val[1])' not valid for property '$($val[0])'"
+                    return
+                }
                 @{
                     value = ($p.choiceValues -eq $val[1])[0]
                     definition = $p
