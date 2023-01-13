@@ -38,6 +38,7 @@ Describe "New-QlikTask" {
         Mock Get-QlikCustomProperty {
             return @(@{
                     id = 'daa5005e-5f3b-45c5-b2fd-1a1c92c5f367'
+                    choiceValues = @('development')
                 })
         }
 

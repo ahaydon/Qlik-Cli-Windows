@@ -54,6 +54,7 @@ Describe "New-QlikContentLibrary" {
         Mock Get-QlikCustomProperty {
             return @{
                 id = '0959aa45-92df-4fc7-b0e1-f316db3a2f42'
+                choiceValues = @('Yes', 'it works')
             }
         }
 

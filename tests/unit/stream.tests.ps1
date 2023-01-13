@@ -11,7 +11,7 @@ Describe "New-QlikStream" {
         return ConvertFrom-Json $body
     }
 
-    Context 'Create rule from parameters' {
+    Context 'Create stream from parameters' {
         Mock Get-QlikTag {
             return @(@{
                     id = '177cf33f-1ace-41e8-8382-1c443a51352d'
@@ -20,6 +20,7 @@ Describe "New-QlikStream" {
         Mock Get-QlikCustomProperty {
             return @(@{
                     id = 'daa5005e-5f3b-45c5-b2fd-1a1c92c5f367'
+                    choiceValues = @('development')
                 })
         }
 
