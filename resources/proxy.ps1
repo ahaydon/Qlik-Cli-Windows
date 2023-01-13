@@ -136,36 +136,37 @@ function New-QlikVirtualProxy {
         [string[]]$websocketCrossOriginWhiteList = "",
 
         [String]$additionalResponseHeaders = "",
+        [Int]$sessionInactivityTimeout = 30,
 
-        [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static", "dynamic", "SAML", "JWT", IgnoreCase = $false)]
+        [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static", "dynamic", "SAML", "JWT", "OIDC", IgnoreCase = $false)]
         [String]$authenticationMethod = "Ticket",
 
         [String]$samlMetadataIdP = "",
-
         [String]$samlHostUri = "",
-
         [String]$samlEntityId = "",
-
         [String]$samlAttributeUserId = "",
-
         [String]$samlAttributeUserDirectory = "",
-
         [hashtable[]]$samlAttributeMap = @(),
-
         [switch]$samlSlo,
-
         [ValidateSet("sha1", "sha256")]
         [String]$samlSigningAlgorithm = "sha1",
 
         [String]$jwtPublicKeyCertificate = "",
-
         [String]$jwtAttributeUserId = "",
-
         [String]$jwtAttributeUserDirectory = "",
-
         [hashtable[]]$jwtAttributeMap = @(),
 
-        [Int]$sessionInactivityTimeout = 30
+        [string]$oidcConfigurationEndpointUri,
+        [string]$oidcClientId,
+        [string]$oidcClientSecret,
+        [string]$oidcRealm,
+        [string]$oidcAttributeSub,
+        [string]$oidcAttributeName,
+        [string]$oidcAttributeGroups,
+        [string]$oidcAttributeClientId,
+        [string]$oidcAttributePicture,
+        [hashtable[]]$oidcAttributeMap = @(),
+        [string]$oidcScope
     )
 
     PROCESS {
@@ -191,6 +192,7 @@ function New-QlikVirtualProxy {
             "dynamic" { 2 }
             "saml" { 3 }
             "jwt" { 4 }
+            "oidc" { 5 }
             default { $authenticationMethod }
         }
         $samlSigningAlgorithmCode = switch ($samlSigningAlgorithm) {
@@ -220,6 +222,18 @@ function New-QlikVirtualProxy {
                 jwtAttributeUserId = $jwtAttributeUserId;
                 jwtAttributeUserDirectory = $jwtAttributeUserDirectory;
                 jwtAttributeMap = $jwtAttributeMap;
+                oidcConfigurationEndpointUri = $oidcConfigurationEndpointUri;
+                oidcClientId = $oidcClientId;
+                oidcClientSecret = $oidcClientSecret;
+                oidcRealm = $oidcRealm;
+                oidcAttributeSub = $oidcAttributeSub;
+                oidcAttributeName = $oidcAttributeName;
+                oidcAttributeGroups = $oidcAttributeGroups;
+                oidcAttributeEmail = $oidcAttributeEmail;
+                oidcAttributeClientId = $oidcAttributeClientId;
+                oidcAttributePicture = $oidcAttributePicture;
+                oidcAttributeMap = $oidcAttributeMap;
+                oidcScope = $oidcScope;
             } | ConvertTo-Json -Compress -Depth 10)
 
         return Invoke-QlikPost "/qrs/virtualproxyconfig" $json
@@ -360,47 +374,43 @@ function Update-QlikVirtualProxy {
         [alias("wsorigin")]
         [string[]]$websocketCrossOriginWhiteList,
 
-        [String]$additionalResponseHeaders,
-
-        [Int]$anonymousAccessMode,
-
-        [String]$magicLinkHostUri,
-
-        [String]$magicLinkFriendlyName,
-
-        [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static", "dynamic", "SAML", "JWT", IgnoreCase = $false)]
+        [ValidateSet("Ticket", "HeaderStaticUserDirectory", "HeaderDynamicUserDirectory", "static", "dynamic", "SAML", "JWT", "OIDC", IgnoreCase = $false)]
         [String]$authenticationMethod,
 
+        [String]$additionalResponseHeaders,
+        [Int]$anonymousAccessMode,
+        [String]$magicLinkHostUri,
+        [String]$magicLinkFriendlyName,
+        [Int]$sessionInactivityTimeout,
+        [string[]]$customProperties,
+        [string[]]$tags,
+
         [String]$samlMetadataIdP,
-
         [String]$samlHostUri,
-
         [String]$samlEntityId,
-
         [String]$samlAttributeUserId,
-
         [String]$samlAttributeUserDirectory,
-
         [hashtable[]]$samlAttributeMap,
-
         [switch]$samlSlo,
-
         [ValidateSet("sha1", "sha256")]
         [String]$samlSigningAlgorithm,
 
         [String]$jwtPublicKeyCertificate,
-
         [String]$jwtAttributeUserId,
-
         [String]$jwtAttributeUserDirectory,
-
         [hashtable[]]$jwtAttributeMap,
 
-        [Int]$sessionInactivityTimeout,
-
-        [string[]]$customProperties,
-
-        [string[]]$tags
+        [string]$oidcConfigurationEndpointUri,
+        [string]$oidcClientId,
+        [string]$oidcClientSecret,
+        [string]$oidcRealm,
+        [string]$oidcAttributeSub,
+        [string]$oidcAttributeName,
+        [string]$oidcAttributeGroups,
+        [string]$oidcAttributeClientId,
+        [string]$oidcAttributePicture,
+        [hashtable[]]$oidcAttributeMap = @(),
+        [string]$oidcScope
     )
 
     PROCESS {
@@ -431,6 +441,9 @@ function Update-QlikVirtualProxy {
         }
         If ( $psBoundParameters.ContainsKey("magicLinkHostUri") ) { $proxy.magicLinkHostUri = $magicLinkHostUri }
         If ( $psBoundParameters.ContainsKey("magicLinkFriendlyName") ) { $proxy.magicLinkFriendlyName = $magicLinkFriendlyName }
+        If ( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) { $proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $proxy.customProperties = @(GetCustomProperties $customProperties $proxy.customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $proxy.tags = @(GetTags $tags $proxy.tags) }
         If ( $psBoundParameters.ContainsKey("authenticationMethod") ) {
             $proxy.authenticationMethod = switch ($authenticationMethod) {
                 "ticket" { 0 }
@@ -438,9 +451,11 @@ function Update-QlikVirtualProxy {
                 "dynamic" { 2 }
                 "saml" { 3 }
                 "jwt" { 4 }
+                "oidc" { 5 }
                 default { $authenticationMethod }
             }
         }
+
         If ( $psBoundParameters.ContainsKey("samlMetadataIdP") ) { $proxy.samlMetadataIdP = $samlMetadataIdP }
         If ( $psBoundParameters.ContainsKey("samlHostUri") ) { $proxy.samlHostUri = $samlHostUri }
         If ( $psBoundParameters.ContainsKey("samlEntityId") ) { $proxy.samlEntityId = $samlEntityId }
@@ -454,13 +469,23 @@ function Update-QlikVirtualProxy {
             }
         }
         If ( $psBoundParameters.ContainsKey("samlSlo") ) { $proxy.samlSlo = $samlSlo.IsPresent }
+
         If ( $psBoundParameters.ContainsKey("jwtPublicKeyCertificate") ) { $proxy.jwtPublicKeyCertificate = $jwtPublicKeyCertificate }
         If ( $psBoundParameters.ContainsKey("jwtAttributeUserId") ) { $proxy.jwtAttributeUserId = $jwtAttributeUserId }
         If ( $psBoundParameters.ContainsKey("jwtAttributeUserDirectory") ) { $proxy.jwtAttributeUserDirectory = $jwtAttributeUserDirectory }
         If ( $psBoundParameters.ContainsKey("jwtAttributeMap") ) { $proxy.jwtAttributeMap = $jwtAttributeMap }
-        If ( $psBoundParameters.ContainsKey("sessionInactivityTimeout") ) { $proxy.sessionInactivityTimeout = $sessionInactivityTimeout }
-        if ($PSBoundParameters.ContainsKey("customProperties")) { $proxy.customProperties = @(GetCustomProperties $customProperties $proxy.customProperties) }
-        if ($PSBoundParameters.ContainsKey("tags")) { $proxy.tags = @(GetTags $tags $proxy.tags) }
+
+        If ( $psBoundParameters.ContainsKey("oidcConfigurationEndpointUri") ) { $proxy.oidcConfigurationEndpointUri = $oidcConfigurationEndpointUri }
+        If ( $psBoundParameters.ContainsKey("oidcClientId") ) { $proxy.oidcClientId = $oidcClientId }
+        If ( $psBoundParameters.ContainsKey("oidcClientSecret") ) { $proxy.oidcClientSecret = $oidcClientSecret }
+        If ( $psBoundParameters.ContainsKey("oidcRealm") ) { $proxy.oidcRealm = $oidcRealm }
+        If ( $psBoundParameters.ContainsKey("oidcAttributeSub") ) { $proxy.oidcAttributeSub = $oidcAttributeSub }
+        If ( $psBoundParameters.ContainsKey("oidcAttributeName") ) { $proxy.oidcAttributeName = $oidcAttributeName }
+        If ( $psBoundParameters.ContainsKey("oidcAttributeGroups") ) { $proxy.oidcAttributeGroups = $oidcAttributeGroups }
+        If ( $psBoundParameters.ContainsKey("oidcAttributeClientId") ) { $proxy.oidcAttributeClientId = $oidcAttributeClientId }
+        If ( $psBoundParameters.ContainsKey("oidcAttributePicture") ) { $proxy.oidcAttributePicture = $oidcAttributePicture }
+        If ( $psBoundParameters.ContainsKey("oidcAttributeMap") ) { $proxy.oidcAttributeMap = $oidcAttributeMap }
+        If ( $psBoundParameters.ContainsKey("oidcScope") ) { $proxy.oidcScope = $oidcScope }
 
         $json = $proxy | ConvertTo-Json -Compress -Depth 10
         return Invoke-QlikPut "/qrs/virtualproxyconfig/$id" $json
