@@ -233,8 +233,8 @@ function Update-QlikReloadTask {
         [ValidateRange(0, 20)]
         [Int]$MaxRetries,
 
-        [string[]]$customProperties,
-        [string[]]$tags
+        [object[]]$customProperties,
+        [object[]]$tags
     )
 
     PROCESS {
