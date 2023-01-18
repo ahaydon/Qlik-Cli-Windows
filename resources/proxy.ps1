@@ -1,4 +1,4 @@
-function Add-QlikProxy {
+﻿function Add-QlikProxy {
     [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, Position = 0)]
@@ -163,6 +163,7 @@ function New-QlikVirtualProxy {
         [string]$oidcAttributeSub,
         [string]$oidcAttributeName,
         [string]$oidcAttributeGroups,
+        [string]$oidcAttributeEmail,
         [string]$oidcAttributeClientId,
         [string]$oidcAttributePicture,
         [hashtable[]]$oidcAttributeMap = @(),
@@ -407,6 +408,7 @@ function Update-QlikVirtualProxy {
         [string]$oidcAttributeSub,
         [string]$oidcAttributeName,
         [string]$oidcAttributeGroups,
+        [string]$oidcAttributeEmail,
         [string]$oidcAttributeClientId,
         [string]$oidcAttributePicture,
         [hashtable[]]$oidcAttributeMap = @(),
@@ -482,6 +484,7 @@ function Update-QlikVirtualProxy {
         If ( $psBoundParameters.ContainsKey("oidcAttributeSub") ) { $proxy.oidcAttributeSub = $oidcAttributeSub }
         If ( $psBoundParameters.ContainsKey("oidcAttributeName") ) { $proxy.oidcAttributeName = $oidcAttributeName }
         If ( $psBoundParameters.ContainsKey("oidcAttributeGroups") ) { $proxy.oidcAttributeGroups = $oidcAttributeGroups }
+        If ( $psBoundParameters.ContainsKey("oidcAttributeEmail") ) { $proxy.oidcAttributeEmail = $oidcAttributeEmail }
         If ( $psBoundParameters.ContainsKey("oidcAttributeClientId") ) { $proxy.oidcAttributeClientId = $oidcAttributeClientId }
         If ( $psBoundParameters.ContainsKey("oidcAttributePicture") ) { $proxy.oidcAttributePicture = $oidcAttributePicture }
         If ( $psBoundParameters.ContainsKey("oidcAttributeMap") ) { $proxy.oidcAttributeMap = $oidcAttributeMap }
