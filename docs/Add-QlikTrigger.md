@@ -37,14 +37,14 @@ There are two types of triggers for a reload task:
 
 ### Example 1: Trigger task on completion of another task
 ```powershell
-PS C:\> Get-QlikTask -filter "name eq 'Reload Dashboard'" | Add-QlikTrigger -name 'On completion of extract' -OnSuccess (Get-QlikTask -filter "name eq 'Extract to QVD'")
+PS C:\> Get-QlikTask -filter "name eq 'Reload Dashboard'" -full | Add-QlikTrigger -name 'On completion of extract' -OnSuccess (Get-QlikTask -filter "name eq 'Extract to QVD'")
 ```
 
 This command creates a trigger for the 'Reload Dashboard' task that triggers on successful completion of the 'Extract to QVD' task.
 
 ### Example 2: Trigger task at a specified time every day
 ```powershell
-PS C:\> Get-QlikTask -filter "name eq 'Extract to QVD'" | Add-QlikTrigger -name 'On completion of extract' -startDate (Get-Date)
+PS C:\> Get-QlikTask -filter "name eq 'Extract to QVD'" -full | Add-QlikTrigger -name 'On completion of extract' -startDate (Get-Date)
 ```
 
 This command creates a trigger for the 'Extract to QVD' task that triggers at the current time every day.
