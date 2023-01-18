@@ -81,8 +81,8 @@ function Update-QlikUser {
         [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelinebyPropertyName = $True, Position = 0)]
         [string]$id,
 
-        [string[]]$customProperties,
-        [string[]]$tags,
+        [object[]]$customProperties,
+        [object[]]$tags,
         [string]$name,
         [string[]]$roles
     )

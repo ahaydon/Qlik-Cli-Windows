@@ -62,8 +62,8 @@ function Update-QlikStream {
         [string]$id,
         [string]$name,
         [object]$owner,
-        [string[]]$customProperties,
-        [string[]]$tags
+        [object[]]$customProperties,
+        [object[]]$tags
     )
 
     PROCESS {

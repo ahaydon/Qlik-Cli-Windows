@@ -126,8 +126,8 @@ function Update-QlikDataConnection {
         [string]$ConnectionString,
         [PSCredential]$Credential,
         [object]$owner,
-        [string[]]$customProperties,
-        [string[]]$tags
+        [object[]]$customProperties,
+        [object[]]$tags
     )
 
     PROCESS {

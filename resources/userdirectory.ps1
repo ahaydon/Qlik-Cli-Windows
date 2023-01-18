@@ -99,7 +99,7 @@ function Update-QlikUserDirectory {
         [string]$ldapFilter,
         [int]$timeout,
         [Int]$pageSize,
-        [string[]]$tags
+        [object[]]$tags
     )
 
     PROCESS {

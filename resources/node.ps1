@@ -140,8 +140,8 @@ function Update-QlikNode {
         [string]$name,
         [ValidateSet("Production", "Development", "Both", "ProductionAndDevelopment")]
         [string]$nodePurpose,
-        [string[]]$customProperties,
-        [string[]]$tags,
+        [object[]]$customProperties,
+        [object[]]$tags,
         [switch]$engineEnabled,
         [switch]$proxyEnabled,
         [switch]$schedulerEnabled,

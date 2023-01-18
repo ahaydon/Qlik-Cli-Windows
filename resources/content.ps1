@@ -133,8 +133,8 @@ function Update-QlikContentLibrary {
         [string]$id,
 
         [object]$owner,
-        [string[]]$customProperties,
-        [string[]]$tags
+        [object[]]$customProperties,
+        [object[]]$tags
     )
 
     PROCESS {

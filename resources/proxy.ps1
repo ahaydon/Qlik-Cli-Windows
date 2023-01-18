@@ -1,4 +1,4 @@
-﻿function Add-QlikProxy {
+function Add-QlikProxy {
     [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, Position = 0)]
@@ -382,8 +382,8 @@ function Update-QlikVirtualProxy {
         [String]$magicLinkHostUri,
         [String]$magicLinkFriendlyName,
         [Int]$sessionInactivityTimeout,
-        [string[]]$customProperties,
-        [string[]]$tags,
+        [object[]]$customProperties,
+        [object[]]$tags,
 
         [String]$samlMetadataIdP,
         [String]$samlHostUri,
