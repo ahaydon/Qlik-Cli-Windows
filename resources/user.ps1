@@ -89,8 +89,8 @@ function Update-QlikUser {
 
     PROCESS {
         $user = Get-QlikUser $id -raw
-        If ( $roles ) { $user.roles = $roles }
-        If ( $name ) { $user.name = $name }
+        If ($PSBoundParameters.ContainsKey("roles")) { $user.roles = $roles }
+        If ($PSBoundParameters.ContainsKey("tags")) { $user.name = $name }
         if ($PSBoundParameters.ContainsKey("customProperties")) { $user.customProperties = @(GetCustomProperties $customProperties $user.customProperties) }
         if ($PSBoundParameters.ContainsKey("tags")) { $user.tags = @(GetTags $tags $user.tags) }
 
