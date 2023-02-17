@@ -149,10 +149,10 @@ function Update-QlikEngine {
         if ($documentDirectory) {
             $engine.settings.documentDirectory = $documentDirectory
         }
-        if ($AllowDataLineage) {
+        if ($PSBoundParameters.ContainsKey('AllowDataLineage')) {
             $engine.settings.allowDataLineage = $AllowDataLineage
         }
-        if ($StandardReload) {
+        if ($PSBoundParameters.ContainsKey('StandardReload')) {
             $engine.settings.standardReload = $StandardReload
         }
         if ($documentTimeout) {
