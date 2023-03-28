@@ -53,6 +53,7 @@ function CallRestUri {
 
         if ($params.OutFile -or $params.InFile) {
             $ProgressPreference = 'SilentlyContinue'
+            $params.Header.Add("Transfer-Encoding", "chunked")
             if ($null -eq $params.TimeoutSec) {
                 $paramInvokeRestMethod.TimeoutSec = 300
             }

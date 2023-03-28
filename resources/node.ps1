@@ -53,6 +53,8 @@ function New-QlikNode {
                 hostName = $hostname;
             }
         }
+        if ($PSBoundParameters.ContainsKey("customProperties")) { $node.customProperties = @(GetCustomProperties $customProperties $node.customProperties) }
+        if ($PSBoundParameters.ContainsKey("tags")) { $node.tags = @(GetTags $tags $node.tags) }
         If ( $psBoundParameters.ContainsKey("failoverCandidate") ) {
             $conf.configuration.failoverCandidate = $failoverCandidate.IsPresent
             if ($failoverCandidate.IsPresent) {
