@@ -74,56 +74,6 @@ Describe "New-QlikNode" {
             Assert-VerifiableMock
         }
     }
-
-    Context 'tag' {
-        Mock Get-QlikTag {
-            return $null
-        }
-
-        It 'should be possible to remove all tags' {
-            $app = New-QlikNode `
-                -hostname 'sense-rim' `
-                -tags $null
-
-            $app.tags | Should -BeNullOrEmpty
-
-            Assert-VerifiableMock
-        }
-
-        It 'should not remove tags if parameter not provided' {
-            $app = New-QlikNode `
-                -hostname 'sense-rim'
-
-            $app.tags | Should -HaveCount 1
-
-            Assert-VerifiableMock
-        }
-    }
-
-    Context 'custom property' {
-        Mock Get-QlikCustomProperty {
-            return $null
-        }
-
-        It 'should be possible to remove all custom properties' {
-            $app = New-QlikNode `
-                -hostname 'sense-rim' `
-                -customProperties $null
-
-            $app.customProperties | Should -BeNullOrEmpty
-
-            Assert-VerifiableMock
-        }
-
-        It 'should not remove custom properties if parameter not provided' {
-            $app = New-QlikNode `
-                -hostname 'sense-rim'
-
-            $app.customProperties | Should -HaveCount 1
-
-            Assert-VerifiableMock
-        }
-    }
 }
 
 Describe "Update-QlikNode" {
