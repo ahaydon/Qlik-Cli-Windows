@@ -2,7 +2,7 @@ version: 2.1
 executors:
   powershell:
     docker:
-      - image: mcr.microsoft.com/dotnet/sdk:5.0.400-alpine3.13
+      - image: mcr.microsoft.com/dotnet/sdk:7.0-alpine
     shell: /usr/bin/pwsh
 
 jobs:
