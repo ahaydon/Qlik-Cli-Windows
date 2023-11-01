@@ -135,13 +135,23 @@ function Update-QlikDataConnection {
         If ($PSBoundParameters.ContainsKey("ConnectionString")) {
             $qdc.connectionstring = $ConnectionString
         }
-        if ( $Credential ) {
-            $qdc.username = $Credential.Username
-            if ($qdc.psobject.Properties.name -contains "password") {
-                $qdc.password = $Credential.GetNetworkCredential().Password
+        if ($PSBoundParameters.ContainsKey("Credential")) {
+            if ($null -eq $Credential) {
+                $Credential = [System.Management.Automation.PSCredential]::Empty
+            }
+            if ($Credential.Password -is [System.Security.SecureString]) {
+                $password = $Credential.GetNetworkCredential().Password
             }
             else {
-                $qdc | Add-Member -MemberType NoteProperty -Name "password" -Value $($Credential.GetNetworkCredential().Password)
+                $password = ''
+            }
+
+            $qdc.username = $Credential.Username
+            if ($qdc.psobject.Properties.name -contains "password") {
+                $qdc.password = $password
+            }
+            else {
+                $qdc | Add-Member -MemberType NoteProperty -Name "password" -Value $password
             }
         }
         if ($PSBoundParameters.ContainsKey("customProperties")) { $qdc.customProperties = @(GetCustomProperties $customProperties $qdc.customProperties) }
