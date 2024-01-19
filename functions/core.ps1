@@ -63,6 +63,7 @@ function CallRestUri {
             if ($result.Headers -and $result.Headers['Content-Type'] -like 'application/json;*') {
                 $result = $result.Content | ConvertFrom-Json
             }
+            $null = $script:webSessionContainer.Headers.Remove('Transfer-Encoding')
         }
         else {
             $result = Invoke-RestMethod @paramInvokeRestMethod @params
