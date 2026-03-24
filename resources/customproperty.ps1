@@ -21,6 +21,7 @@ function New-QlikCustomProperty {
     [CmdletBinding()]
     param (
         [string]$name,
+        [string]$description,
         [string]$valueType = "Text",
         [string[]]$choiceValues,
 
@@ -31,6 +32,7 @@ function New-QlikCustomProperty {
     PROCESS {
         $json = @{
             name = $name;
+            description = $description;
             valueType = $valueType;
             objectTypes = $objectTypes
         }
