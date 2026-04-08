@@ -13,6 +13,9 @@ Add-Type -AssemblyName System.Web
 	.PARAMETER TrustAllCerts
 		 Disable checking of certificate trust
 
+    .PARAMETER JWToken
+         JWT (JSON Web Token) for an additional authentication method
+
 	.PARAMETER Username
 		 UserId to use with certificate authentication in the format domain\username
 
@@ -44,6 +47,7 @@ function Connect-Qlik {
         [Parameter(Position = 0)]
         [string]$Computername,
         [switch]$TrustAllCerts,
+        [string]$JWToken,
         [Parameter(ParameterSetName = 'Certificate')]
         [string]$Username = "$($env:userdomain)\$($env:username)",
         [Parameter(ParameterSetName = 'Certificate',
@@ -118,6 +122,14 @@ function Connect-Qlik {
             $Script:api_params = @{
                 Credential = $Credential
             }
+        }
+        ElseIf ($JWToken) {
+            Write-Verbose "Using jwt"
+            $Script:api_params = @{                
+                Header = @{
+                    Authorization="Bearer $JWToken"                    
+                }
+            }            
         }
         Else {
             Write-Verbose "No valid certificate found, using Windows credentials"
